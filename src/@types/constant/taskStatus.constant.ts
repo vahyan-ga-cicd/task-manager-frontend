@@ -1,0 +1,1 @@
+export type TaskStatus = "pending" | "ongoing" | "complete";

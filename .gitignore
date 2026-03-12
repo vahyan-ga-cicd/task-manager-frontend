@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Deployment / documentation files
+AWS_DEPLOYMENT_GUIDE.md
+DEPLOYMENT_README.md
+DEPLOYMENT_SUMMARY.md
+DEVELOPER_DOCUMENTATION.md
+DOCUMENTATION_INDEX.md
+WORKFLOW_DIAGRAM.md

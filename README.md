@@ -1,36 +1,151 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Task Management Application
 
-## Getting Started
+A modern, full-stack task management application built with Next.js 16, React 19, and TypeScript. Features include user authentication, task CRUD operations, and a responsive dashboard with real-time statistics.
 
-First, run the development server:
+## 🚀 Quick Start
+
+### Development
 
 ```bash
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Production Deployment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+This project is configured for automated deployment to AWS using GitHub Actions.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**📚 See [DEPLOYMENT_README.md](./DEPLOYMENT_README.md) for complete deployment guide**
 
-## Learn More
+## 📖 Documentation
 
-To learn more about Next.js, take a look at the following resources:
+| Document                                                       | Purpose                                 |
+| -------------------------------------------------------------- | --------------------------------------- |
+| **[DEPLOYMENT_README.md](./DEPLOYMENT_README.md)**             | 🎯 Start here - Overview and navigation |
+| **[DEPLOYMENT_SUMMARY.md](./DEPLOYMENT_SUMMARY.md)**           | 📊 Quick reference - One-page summary   |
+| **[DEVELOPER_DOCUMENTATION.md](./DEVELOPER_DOCUMENTATION.md)** | 👨‍💻 Complete development guide           |
+| **[AWS_DEPLOYMENT_GUIDE.md](./AWS_DEPLOYMENT_GUIDE.md)**       | ☁️ Full AWS deployment guide            |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## ✨ Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- 🔐 **Authentication** - JWT-based user authentication
+- ✅ **Task Management** - Create, read, update, delete tasks
+- 📊 **Dashboard** - Real-time task statistics
+- 📱 **Responsive Design** - Mobile-first approach
+- 🎨 **Modern UI** - Tailwind CSS with glassmorphism effects
+- ⚡ **Performance** - React Compiler optimization
+- 🔒 **Security** - WAF protection, rate limiting, HTTPS
 
-## Deploy on Vercel
+## 🛠️ Tech Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Framework**: Next.js 16.1.6 (App Router)
+- **React**: 19.2.3
+- **TypeScript**: 5.x
+- **Styling**: Tailwind CSS 4.x
+- **HTTP Client**: Axios 1.13.6
+- **Icons**: Lucide React
+- **Deployment**: AWS (S3 + CloudFront + WAF)
+- **CI/CD**: GitHub Actions
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📁 Project Structure
+
+```
+frontend/
+├── .github/workflows/     # CI/CD pipeline
+├── src/
+│   ├── app/              # Next.js pages
+│   ├── components/       # React components
+│   ├── context/          # React Context
+│   ├── hooks/            # Custom hooks
+│   ├── utils/            # Utilities & API
+│   └── @types/           # TypeScript types
+├── public/               # Static assets
+└── docs/                 # Documentation
+```
+
+## 🚀 Deployment
+
+### Automated Deployment (Recommended)
+
+1. Push to `main` branch
+2. GitHub Actions automatically:
+   - Builds the application
+   - Deploys to AWS S3
+   - Invalidates CloudFront cache
+3. Changes live in 5-10 minutes
+
+### Manual Deployment
+
+See [AWS_DEPLOYMENT_GUIDE.md](./AWS_DEPLOYMENT_GUIDE.md) for detailed instructions.
+
+## 🔧 Configuration
+
+### Environment Variables
+
+Create `.env.local`:
+
+```env
+NEXT_PUBLIC_API_URL=https://your-api-url.com/api/v1
+```
+
+### Next.js Configuration
+
+For static export deployment:
+
+```typescript
+// next.config.ts
+const nextConfig: NextConfig = {
+  output: "export",
+  images: { unoptimized: true },
+  trailingSlash: true,
+};
+```
+
+## 📊 Available Scripts
+
+```bash
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run start    # Start production server
+npm run lint     # Run ESLint
+```
+
+## 🔒 Security
+
+- WAF (Web Application Firewall) protection
+- Rate limiting on API endpoints
+- HTTPS enforced
+- Security headers configured
+- DDoS protection via AWS Shield
+
+## 💰 Cost Estimate
+
+- **Small app** (< 10k visitors): $15-30/month
+- **Medium app** (10k-100k visitors): $35-90/month
+- **Large app** (> 100k visitors): $100-500+/month
+
+## 🤝 Contributing
+
+1. Read [DEVELOPER_DOCUMENTATION.md](./DEVELOPER_DOCUMENTATION.md)
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📝 License
+
+This project is private and proprietary.
+
+## 📞 Support
+
+- 📚 Documentation: See docs folder
+- 🐛 Issues: Create a GitHub issue
+- 💬 Questions: Contact the development team
+
+---
+
+**For detailed setup and deployment instructions, start with [DEPLOYMENT_README.md](./DEPLOYMENT_README.md)**
