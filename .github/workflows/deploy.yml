@@ -29,7 +29,6 @@ jobs:
       # Install dependencies
       - name: Install dependencies
         run: npm ci
-      
 
       # Build Next.js
       - name: Build Next.js app
@@ -48,7 +47,9 @@ jobs:
       # Upload build to S3
       - name: Deploy to S3
         run: |
-          aws s3 sync ./out s3://${{ secrets.AWS_S3_BUCKET }} \
+          aws s3 sync ./.next/static s3://${{ secrets.AWS_S3_BUCKET }}/_next/static \
+            --delete
+          aws s3 sync ./public s3://${{ secrets.AWS_S3_BUCKET }} \
             --delete
 
       # Verify deployment
