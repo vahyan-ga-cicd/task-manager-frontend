@@ -3,6 +3,7 @@ import {
   ILoginRequest,
   ISignupRequest,
 } from "@/@types/interface/auth.interfaces";
+import { getAuthHeaders } from "@/config/axios";
 import axios from "axios";
 
 export async function createUser(body: ISignupRequest): Promise<IAuthResponse> {
@@ -39,15 +40,14 @@ export const loginUser = async (
 export const getUser = async () => {
   try {
     const token = localStorage.getItem("token");
-    const res = await axios.get(`/api/auth/user`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    console.log("get user",token)
+    const res = await axios.get(`/api/auth/getcurrentuser`,getAuthHeaders(token as string));
 
     return res.data;
   } catch (error: unknown) {
+    console.log("context error",error)
     if (axios.isAxiosError(error)) {
+      console.log(error.response?.data || error.message);
       throw new Error(error.response?.data?.message || error.message);
     }
     throw new Error("Something went wrong");

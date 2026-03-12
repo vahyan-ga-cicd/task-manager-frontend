@@ -4,14 +4,15 @@ import { getAuthHeaders } from "@/config/axios";
 // interface UpdateTaskBody {
 //   status: "pending" | "ongoing" | "complete";
 // }
-const getToken = () => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("token");
-  }
-  return null;
-};
-const token: string | null = getToken();
+// const getToken = () => {
+//   if (typeof window !== "undefined") {
+//     return localStorage.getItem("token");
+//   }
+//   return null;
+// };
+// const token: string | null = getToken();
 export const createTask = async (body: ICreateTask) => {
+  const token = localStorage.getItem("token");
   try {
     const res = await axios.post(
       "/api/tasks/createtask",
@@ -32,8 +33,10 @@ export const createTask = async (body: ICreateTask) => {
 
 export const fetchTasks = async () => {
   try {
+      const token = localStorage.getItem("token");
+
     const res = await axios.get(
-      "/api/tasks/showtask",
+      "/api/tasks/showtasks",
       getAuthHeaders(token as string),
     );
 
@@ -50,6 +53,7 @@ export const fetchTasks = async () => {
 
 export const updateTaskStatus = async (task_id: string, status: "pending" | "ongoing" | "complete") => {
   try {
+    const token = localStorage.getItem("token");
     const res = await axios.put(
       `/api/tasks/updatetask/${task_id}`,
       { status },
@@ -69,6 +73,7 @@ export const updateTaskStatus = async (task_id: string, status: "pending" | "ong
 
 export const deleteTask = async (task_id: string) => {
   try {
+    const token = localStorage.getItem("token");
     const res = await axios.delete(
       `/api/tasks/deletetask/${task_id}`,
       getAuthHeaders(token as string),

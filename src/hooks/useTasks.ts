@@ -15,11 +15,11 @@ export const useTasks = () => {
   };
 
   useEffect(() => {
-    const fetchTasks = async () => {
+    const loadTasks = async () => {
       await getTasks();
     };
 
-    fetchTasks();
+    loadTasks();
   }, []);
 
   return { tasks, setTasks, getTasks };

@@ -5,7 +5,6 @@ import {
   useContext,
   useState,
   useEffect,
-  useCallback,
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -19,7 +18,6 @@ export interface UserData {
       ongoing_tasks: number;
       tasks_count: number;
     };
-
     user_data: {
       id: string;
       username: string;
@@ -45,9 +43,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const fetchUser = useCallback(async () => {
+  // console.log("Context", localStorage.getItem("token"));
+  const fetchUser = async () => {
+    const token = localStorage.getItem("token");
     try {
-      const token = localStorage.getItem("token");
+      // console.log(token);
 
       if (!token) {
         setAuthenticated(false);
@@ -59,17 +59,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUserData(res);
       setAuthenticated(true);
-    } catch (err) {
-      console.log("Not authenticated", err);
-      setAuthenticated(false);
+    } catch (error) {
+      console.log("Auth failed:", error);
+      // setAuthenticated(false);
+      // localStorage.removeItem("token");
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     fetchUser();
-  }, [fetchUser]);
+  }, []);
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -89,8 +90,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuthContext() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuthContext must be used within an AuthProvider");
+  if (!context) {
+    throw new Error("useAuthContext must be used inside AuthProvider");
   }
   return context;
 }

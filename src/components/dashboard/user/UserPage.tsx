@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Tasks from "@/components/dashboard/tasks/Tasks";
 import { useAuthContext } from "@/context/AuthContext";
 import {
@@ -13,17 +13,26 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { getUser } from "@/utils/api/auth";
 function UserPage() {
   const { userData, authenticated, loading, logout } = useAuthContext();
 
   // console.log("UserPage render:", userData);
   const router = useRouter();
+// const [current,setCurrentUser]=useState()
+// async function fetchUser(){
+//   const res=await getUser()
+//   setCurrentUser(res)
+// }
+// useEffect(() => {
+//   fetchUser()
+// }, [])
 
-  useEffect(() => {
-    if (!loading && !authenticated) {
-      router.replace("/login");
-    }
-  }, [authenticated, loading, router]);
+  // useEffect(() => {
+  //   if (!loading && !authenticated) {
+  //     router.replace("/login");
+  //   }
+  // }, [authenticated, loading, router]);
 
   if (loading) {
     return (
