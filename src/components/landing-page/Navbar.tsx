@@ -44,7 +44,7 @@ const navbarItems = [
           <div className="hidden md:flex items-center space-x-8">
             <Link href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</Link>
             <Link href="#about" className="text-gray-600 hover:text-blue-600 transition-colors">About</Link>
-            <Link href="/ddcos" className="text-gray-600 hover:text-blue-600 transition-colors">DDocs</Link>
+            <Link href="/ddocs/ddocs-frontend" className="text-gray-600 hover:text-blue-600 transition-colors">DDocs</Link>
           </div>
 
           {/* Desktop Auth Buttons */}

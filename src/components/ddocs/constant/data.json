@@ -1,0 +1,275 @@
+{
+  "frontend": {
+    "title": "Frontend Documentation",
+    "subtitle": "Task Manager — Next.js  Application",
+    "version": "0.1.0",
+    "lastUpdated": "March 12, 2026",
+    "overview": "A full-stack task management application built with Next.js , React , and TypeScript. The frontend provides a modern, responsive interface for user authentication and task management, communicating with a backend API hosted on AWS.",
+    "techStack": [
+      { "category": "Framework", "value": "Next.js  (App Router)" },
+      
+      { "category": "Language", "value": "TypeScript " },
+      { "category": "Styling", "value": "Tailwind CSS " },
+      { "category": "HTTP Client", "value": "Axios " },
+      { "category": "Icons", "value": "Lucide React " },
+     
+      { "category": "React Compiler", "value": "babel-plugin-react-compiler " }
+    ],
+    "projectStructure": {
+      "root": "frontend/src/",
+      "directories": [
+        { "path": "@types/", "description": "TypeScript type definitions — constants (TaskStatus) and interfaces (auth, tasks)" },
+        { "path": "app/", "description": "Next.js App Router pages — login, signup, user dashboard, API proxy routes" },
+        { "path": "components/", "description": "React components — dashboard, landing page, layout, login, signup" },
+        { "path": "config/axios.ts", "description": "Axios instance and helper configuration" },
+        { "path": "context/AuthContext.tsx", "description": "Global authentication context provider" },
+        { "path": "hooks/", "description": "Custom hooks — useAuth (deprecated), useTasks for data fetching" },
+        { "path": "utils/api/", "description": "API service functions — auth.ts and tasksApi.ts" }
+      ]
+    },
+    "authFlow": [
+      { "step": 1, "title": "User Registration", "route": "/signup", "description": "User submits username, email, and password. API call to /api/auth/register. On success, redirects to login page." },
+      { "step": 2, "title": "User Login", "route": "/login", "description": "User submits email and password. JWT token stored in localStorage. User data fetched and stored in AuthContext. Redirects to /user dashboard." },
+      { "step": 3, "title": "Protected Routes", "route": "/user", "description": "AuthContext checks for token on mount. Fetches user data if token exists. Redirects to login if unauthenticated. Provides logout() function to clear session." }
+    ],
+    "stateManagement": {
+      "authContext": {
+        "description": "Global authentication state managed via React Context",
+        "fields": [
+          { "name": "userData", "type": "UserData", "description": "User profile and task statistics" },
+          { "name": "authenticated", "type": "boolean", "description": "Boolean authentication status" },
+          { "name": "loading", "type": "boolean", "description": "Loading state during auth check" },
+          { "name": "logout()", "type": "function", "description": "Clears session" },
+          { "name": "fetchUser()", "type": "function", "description": "Refreshes user data" }
+        ]
+      },
+      "localState": "Task lists managed with useTasks hook. Form states with useState. Modal visibility controlled locally."
+    },
+    "apiConfig": {
+      "baseURL": "https://6ft4bgs2e6.execute-api.ap-south-1.amazonaws.com",
+      "authorization": "Bearer token in Authorization header",
+      "endpoints": [
+        { "method": "POST", "path": "/api/auth/register", "auth": false, "description": "Create new user" },
+        { "method": "POST", "path": "/api/auth/login", "auth": false, "description": "Authenticate user, returns JWT" },
+        { "method": "GET", "path": "/api/auth/user", "auth": true, "description": "Get current user data" },
+        { "method": "POST", "path": "/api/tasks/createtask", "auth": true, "description": "Create new task" },
+        { "method": "GET", "path": "/api/tasks/showtask", "auth": true, "description": "Fetch all user tasks" },
+        { "method": "PUT", "path": "/api/tasks/updatetask/:task_id", "auth": true, "description": "Update task status" },
+        { "method": "DELETE", "path": "/api/tasks/deletetask/:task_id", "auth": true, "description": "Delete task" }
+      ]
+    },
+    "dataModels": {
+      "UserData": {
+        "description": "User profile with task statistics",
+        "fields": [
+          { "name": "data.task_data.completed_tasks", "type": "number" },
+          { "name": "data.task_data.pending_tasks", "type": "number" },
+          { "name": "data.task_data.ongoing_tasks", "type": "number" },
+          { "name": "data.task_data.tasks_count", "type": "number" },
+          { "name": "data.user_data.id", "type": "string" },
+          { "name": "data.user_data.username", "type": "string" },
+          { "name": "data.user_data.email", "type": "string" }
+        ]
+      },
+      "ITask": {
+        "description": "Individual task object",
+        "fields": [
+          { "name": "task_id", "type": "string" },
+          { "name": "title", "type": "string" },
+          { "name": "description", "type": "string" },
+          { "name": "status", "type": "\"pending\" | \"ongoing\" | \"complete\"" },
+          { "name": "created_at", "type": "string" }
+        ]
+      }
+    },
+    "components": [
+      { "name": "AuthProvider", "type": "Context", "description": "Wraps entire app. Manages session, token validation, logout, auto-fetches user data on mount." },
+      { "name": "Login", "type": "Page Component", "description": "Email/password form with visibility toggle, validation, error states, loading states, glassmorphism design." },
+      { "name": "Signup", "type": "Page Component", "description": "Username/email/password registration form with validation, error handling, success redirect." },
+      { "name": "UserPage", "type": "Dashboard", "description": "Main dashboard with user profile header, task statistics sidebar, task list, logout button, protected route logic." },
+      { "name": "Tasks", "type": "Feature Component", "description": "Task list display, add button, status dropdown per task, delete functionality, empty state UI, modal integration." },
+      { "name": "AddTaskModal", "type": "Modal", "description": "Title input (required), description textarea (optional), form validation, submit/cancel, loading state." }
+    ],
+    "scripts": [
+      { "command": "npm run dev", "description": "Start development server on localhost:3000" },
+      { "command": "npm run build", "description": "Build for production" },
+      { "command": "npm start", "description": "Start production server" }
+     
+    ],
+   
+    "features": [
+      "Landing page with hero, features, and about sections",
+      "User registration and JWT login",
+      "Protected dashboard with task statistics",
+      "Create, update status, and delete tasks",
+      "Password visibility toggle",
+      "Responsive mobile-first design",
+      "Glassmorphism UI with gradient backgrounds",
+      "Loading states and error feedback"
+    ],
+    "futureEnhancements": [
+      "Task filtering and search",
+      "Due dates and reminders",
+      "Dark mode toggle",
+      "Email verification and password reset"
+       
+    ]
+  },
+  "backend": {
+    "title": "Backend Documentation",
+    "subtitle": "Task Manager — FastAPI Serverless Application",
+    "version": "1.0.0",
+    "lastUpdated": "March 12, 2026",
+    "overview": "A serverless application built with FastAPI, deployed on AWS Lambda via Docker container images. Uses Mangum to deploy at serverless, Amazon DynamoDB for persistent data storage, and Redis (via AWS ElastiCache) for caching.",
+    "techStack": [
+      { "category": "Framework", "value": "FastAPI" },
+      { "category": "Runtime", "value": "Python " },
+      { "category": "Deployment", "value": "AWS Lambda (Docker container)" },
+      { "category": "ASGI Adapter", "value": "Mangum" },
+      { "category": "Database", "value": "Amazon DynamoDB" },
+      { "category": "Cache", "value": "Redis (AWS ElastiCache)" },
+      { "category": "Authentication", "value": "JWT + bcrypt" },
+      { "category": "Infrastructure", "value": "Terraform (IaC)" }
+    ],
+    "projectStructure": {
+      "root": "backend/",
+      "directories": [
+        { "path": "app/api/v1/middleware/", "description": "JWT Authentication middleware — get_current_user_id" },
+        { "path": "app/api/v1/routes/", "description": "FastAPI routers for Auth and Tasks" },
+        { "path": "app/config/", "description": "Environment variable loading and database client setup" },
+        { "path": "app/services/", "description": "Core business logic — AuthService and TaskService" },
+        { "path": "app/utils/", "description": "JWT helper functions" },
+        { "path": "app/main.py", "description": "Application entrypoint and Mangum Lambda handler" },
+        { "path": "terraform/", "description": "AWS infrastructure provisioning — VPC, ECR, API Gateway, DynamoDB, ElastiCache, IAM" },
+        { "path": "Dockerfile", "description": "Lambda container image specification" },
+        { "path": "requirements.txt", "description": "Python dependencies" }
+      ]
+    },
+    "databaseSchema": [
+      {
+        "table": "Users Table (USERS_TABLE)",
+        "partitionKey": "user_id (String — UUID)",
+        "sortKey": null,
+        "gsi": "email-index (Partition Key: email)",
+        "attributes": ["user_id", "username", "email", "password_hash"]
+      },
+      {
+        "table": "Tasks Table (TASKS_TABLE)",
+        "partitionKey": "user_id (String — UUID)",
+        "sortKey": "task_id (String — UUID)",
+        "gsi": null,
+        "attributes": ["user_id", "task_id", "title", "description", "status (pending/ongoing/complete)", "created_at"]
+      }
+    ],
+    "authFlow": [
+      { "step": 1, "title": "Registration", "description": "POST /api/v1/auth/register — creates UUID, hashes password with bcrypt, stores in DynamoDB Users Table." },
+      { "step": 2, "title": "Login", "description": "POST /api/v1/auth/login — validates credentials via email-index GSI, returns signed JWT on success." },
+      { "step": 3, "title": "Protected Routes", "description": "get_current_user_id middleware validates Bearer token from Authorization header on all protected endpoints." }
+    ],
+    "cachingStrategy": {
+      "key": "tasks:{user_id}",
+      "ttl": "300 seconds",
+      "usedFor": "GET /api/v1/tasks/fetch-task",
+      "invalidation": "Aggressively invalidated on create, update, or delete task operations",
+      "fallback": "Redis crash/timeout triggers redis_disabled flag to prevent sustained latency"
+    },
+    "endpoints": [
+      {
+        "group": "Authentication",
+        "routes": [
+          {
+            "method": "POST",
+            "path": "/api/v1/auth/register",
+            "auth": false,
+            "description": "Register a new user",
+            "payload": { "username": "string", "email": "string", "password": "string" },
+            "response": "access_token object"
+          },
+          {
+            "method": "POST",
+            "path": "/api/v1/auth/login",
+            "auth": false,
+            "description": "Login and get JWT token",
+            "payload": { "email": "string", "password": "string" },
+            "response": "access_token object"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/auth/user",
+            "auth": true,
+            "description": "Get current authenticated user data",
+            "payload": null,
+            "response": "user_data + task_data stats"
+          }
+        ]
+      },
+      {
+        "group": "Tasks",
+        "routes": [
+          {
+            "method": "POST",
+            "path": "/api/v1/tasks/create-task",
+            "auth": true,
+            "description": "Create a new task",
+            "payload": { "title": "string", "description": "string (optional)" },
+            "response": "Created task object"
+          },
+          {
+            "method": "GET",
+            "path": "/api/v1/tasks/fetch-task",
+            "auth": true,
+            "description": "Fetch all tasks for the authenticated user (Redis cached)",
+            "payload": null,
+            "response": "Array of task objects"
+          },
+          {
+            "method": "PUT",
+            "path": "/api/v1/tasks/update-task/{task_id}",
+            "auth": true,
+            "description": "Update task status",
+            "payload": { "status": "pending | ongoing | complete" },
+            "response": "Success message"
+          },
+          {
+            "method": "DELETE",
+            "path": "/api/v1/tasks/delete-task/{task_id}",
+            "auth": true,
+            "description": "Delete a task",
+            "payload": null,
+            "response": "Success message"
+          }
+        ]
+      }
+    ],
+    "envVariables": [
+      { "name": "AWS_REGION", "description": "AWS region for DynamoDB", "example": "us-east-1" },
+      { "name": "USERS_TABLE", "description": "DynamoDB users table name", "example": "prod-users" },
+      { "name": "TASKS_TABLE", "description": "DynamoDB tasks table name", "example": "prod-tasks" },
+      { "name": "JWT_SECRET", "description": "Secret key for signing JWTs", "example": "your_super_secret_key" },
+      { "name": "REDIS_HOST", "description": "Redis server hostname", "example": "localhost" },
+      { "name": "REDIS_PORT", "description": "Redis server port", "example": "6379" },
+      { "name": "ENVIRONMENT", "description": "Set to 'development' to disable Redis locally", "example": "development" }
+    ],
+    "localSetup": [
+      { "step": 1, "command": "python -m venv venv && source venv/bin/activate", "description": "Create and activate virtual environment" },
+      { "step": 2, "command": "pip install -r requirements.txt", "description": "Install Python dependencies" },
+      { "step": 3, "command": "Create .env file with required variables", "description": "Configure environment (set ENVIRONMENT=development to disable Redis)" },
+      { "step": 4, "command": "uvicorn app.main:app --reload", "description": "Start FastAPI development server" }
+    ],
+    "deployment": [
+      { "step": 1, "description": "Authenticate with AWS CLI" },
+      { "step": 2, "description": "Run terraform init and terraform apply in terraform/ directory to provision VPC, subnets, ECR, API Gateway, DynamoDB, ElastiCache, and IAM roles" },
+      { "step": 3, "description": "Build and push Docker image to ECR registry" },
+      { "step": 4, "description": "Update Lambda function to point to new ECR image tag" }
+    ],
+    "infrastructure": [
+      "VPC with subnets",
+      "ECR repository for Docker images",
+      "API Gateway (HTTP API)",
+      "AWS Lambda (container runtime)",
+      "DynamoDB tables with GSI",
+      "ElastiCache Redis cluster",
+      "IAM roles and policies"
+    ]
+  }
+}
