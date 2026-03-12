@@ -104,7 +104,7 @@ const navbarItems = [
                   About
                 </Link>
                 <Link 
-                  href="/ddcos" 
+                  href="/ddocs/ddocs-frontend" 
                   className="block py-3 px-4 text-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all font-medium"
                   onClick={closeMobileMenu}
                 >
