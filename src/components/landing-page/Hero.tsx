@@ -38,7 +38,7 @@ export default function Hero() {
             href="/signup"
             className="w-full sm:w-auto px-8 py-4 text-lg font-semibold rounded-full text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 transform hover:-translate-y-1"
           >
-            Get Started
+            Get Started for Free
           </Link>
 
           <Link
