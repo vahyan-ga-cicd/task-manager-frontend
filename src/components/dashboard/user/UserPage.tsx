@@ -13,20 +13,22 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { getUser } from "@/utils/api/auth";
+import { getallusers } from "@/pages/api/admin/admin";
+import { useAdmin } from "@/hooks/admin";
+// import { getUser } from "@/pages/api/auth";
 function UserPage() {
   const { userData, authenticated, loading, logout } = useAuthContext();
 
   // console.log("UserPage render:", userData);
   const router = useRouter();
-// const [current,setCurrentUser]=useState()
-// async function fetchUser(){
-//   const res=await getUser()
-//   setCurrentUser(res)
-// }
-// useEffect(() => {
-//   fetchUser()
-// }, [])
+  // const [current,setCurrentUser]=useState()
+  // async function fetchUser(){
+  //   const res=await getUser()
+  //   setCurrentUser(res)
+  // }
+  // useEffect(() => {
+  //   fetchUser()
+  // }, [])
 
   // useEffect(() => {
   //   if (!loading && !authenticated) {

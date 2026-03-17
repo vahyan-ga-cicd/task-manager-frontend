@@ -11,8 +11,6 @@ export interface ISignupRequest {
 
 export interface IAuthResponse {
   // data: {
-    access_token: {
-      token: string;
-    // };
-  };
+    access_token: string;
+  
 }

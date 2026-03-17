@@ -1,5 +1,5 @@
 import { ITask } from "@/@types/interface/tasks.interfaces";
-import { fetchTasks } from "@/utils/api/tasksApi";
+import { fetchTasks } from "@/pages/api/tasksApi";
 import { useEffect, useState } from "react";
 
 export const useTasks = () => {

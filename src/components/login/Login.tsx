@@ -2,7 +2,7 @@
 
 import { ILoginRequest } from "@/@types/interface/auth.interfaces";
 import { useAuthContext } from "@/context/AuthContext";
-import { loginUser } from "@/utils/api/auth";
+import { loginUser } from "@/pages/api/auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react"; // npm install lucide-react
@@ -45,7 +45,7 @@ export default function Login() {
 
     try {
       const res = await loginUser(formData);
-      localStorage.setItem("token", res?.access_token?.token);
+      localStorage.setItem("token", res?.access_token);
       await fetchUser();
       router.replace("/user");
     } catch (error) {
@@ -61,14 +61,24 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Decorative background elements */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 blur-3xl -z-10 animate-pulse" />
-        
+
         {/* Main Card */}
         <div className="relative bg-white/80 backdrop-blur-xl shadow-2xl rounded-3xl p-10 border border-white/50">
           {/* Logo/Brand - Optional */}
           <div className="text-center mb-8">
             <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              <svg
+                className="w-10 h-10 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
               </svg>
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
@@ -150,7 +160,9 @@ export default function Login() {
             {/* Divider */}
             <div className="relative flex items-center py-4">
               <div className="flex-grow border-t border-gray-300" />
-              <span className="flex-shrink mx-4 text-xs text-gray-500 font-medium">or continue with</span>
+              <span className="flex-shrink mx-4 text-xs text-gray-500 font-medium">
+                or continue with
+              </span>
               <div className="flex-grow border-t border-gray-300" />
             </div>
           </form>
@@ -159,7 +171,10 @@ export default function Login() {
           <div className="text-center pt-6">
             <p className="text-sm text-gray-600">
               Don&apos;t have an account?{" "}
-              <a href="/signup" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+              <a
+                href="/signup"
+                className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+              >
                 Create one
               </a>
             </p>
