@@ -17,7 +17,7 @@ function AdminDashboard() {
       {/* Users Grid */}
       <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         
-        {users.map((user) => {
+        {users?.map((user) => {
           const isLegacyUser = user.hashed_password === null;
 
           return (
