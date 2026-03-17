@@ -13,7 +13,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { getallusers } from "@/pages/api/admin/admin";
+// import { getallusers } from "@/pages/api/admin/admin";
 import { useAdmin } from "@/hooks/admin";
 // import { getUser } from "@/pages/api/auth";
 function UserPage() {

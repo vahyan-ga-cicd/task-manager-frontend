@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { ISignupRequest } from "@/@types/interface/auth.interfaces";
-import { createUser } from "@/pages/api/auth";
+// import { createUser } from "@/pages/api/auth";
 import { AxiosError } from "axios";
 import { Eye, EyeOff, Loader2, User, Mail } from "lucide-react"; // npm install lucide-react
 import { useRouter } from "next/navigation";
+import { createUser } from "@/utils/api/auth";
 
 function Signup() {
   const [formData, setFormData] = useState<ISignupRequest>({

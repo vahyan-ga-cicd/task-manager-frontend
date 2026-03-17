@@ -1,5 +1,7 @@
 import { IUser } from "@/@types/interface/admin.interfaces";
-import { getallusers } from "@/pages/api/admin/admin";
+import { getallusers } from "@/utils/api/admin/admin";
+// import getallusers from "@/pages/api/admin/admin";
+// import { getallusers } from "@/pages/api/admin/admin";
 import {  useEffect, useState } from "react";
 
 export const useAdmin = () => {

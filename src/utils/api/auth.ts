@@ -6,7 +6,7 @@ import {
 import { getAuthHeaders } from "@/config/axios";
 import axios from "axios";
 
-export async function createUser(body: ISignupRequest): Promise<IAuthResponse> {
+export  async function createUser(body: ISignupRequest): Promise<IAuthResponse> {
   try {
     const res = await axios.post("/api/auth/register", body);
 

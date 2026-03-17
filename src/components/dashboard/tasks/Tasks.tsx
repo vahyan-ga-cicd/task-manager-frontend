@@ -2,10 +2,11 @@
 
 import React, { useState } from "react";
 import AddTaskModal from "./AddTaskModal";
-import { createTask, deleteTask, updateTaskStatus } from "@/pages/api/tasksApi";
+// import { createTask, deleteTask, updateTaskStatus } from "@/pages/api/tasksApi";
 import { useTasks } from "@/hooks/useTasks";
 import { useAuthContext } from "@/context/AuthContext";
 import { Trash } from "lucide-react";
+import { createTask, deleteTask, updateTaskStatus } from "@/utils/api/tasksApi";
 
 type TaskStatus = "pending" | "ongoing" | "complete";
 

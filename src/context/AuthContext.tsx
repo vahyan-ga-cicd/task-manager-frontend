@@ -8,7 +8,8 @@ import {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { getUser } from "@/pages/api/auth";
+import { getUser } from "@/utils/api/auth";
+// import { getUser } from "@/pages/api/auth";
 
 export interface UserData {
   data: {

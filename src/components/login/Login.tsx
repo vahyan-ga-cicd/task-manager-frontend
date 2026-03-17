@@ -2,10 +2,11 @@
 
 import { ILoginRequest } from "@/@types/interface/auth.interfaces";
 import { useAuthContext } from "@/context/AuthContext";
-import { loginUser } from "@/pages/api/auth";
+// import { loginUser } from "@/pages/api/auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react"; // npm install lucide-react
+import { loginUser } from "@/utils/api/auth";
 
 export default function Login() {
   const [formData, setFormData] = useState<ILoginRequest>({
