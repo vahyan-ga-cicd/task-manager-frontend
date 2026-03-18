@@ -1,7 +1,7 @@
 "use client";
 
 import { useAdmin } from "@/hooks/admin";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Pencil } from "lucide-react";
 import { updateuser } from "@/utils/api/admin/admin";
 
@@ -62,7 +62,17 @@ function AdminDashboard() {
           return user.activation_status === "inactive";
       });
   }, [users, search, filterStatus]);
+  useEffect(() => {
+    if (editingUser) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
 
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [editingUser]);
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       {/* 🔷 Header */}
@@ -163,7 +173,7 @@ function AdminDashboard() {
 
       {/* ✏️ Modal */}
       {editingUser && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 ">
           <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
             <h2 className="text-xl font-semibold mb-4 text-gray-800">
               Update User
@@ -174,7 +184,7 @@ function AdminDashboard() {
               onChange={(e) =>
                 setFormData({ ...formData, username: e.target.value })
               }
-              className="w-full mb-3 p-2 border border-gray-300 rounded focus:outline-none"
+              className="text-black w-full mb-3 p-2 border border-gray-300 rounded focus:outline-none"
               placeholder="Username"
             />
 
@@ -183,7 +193,7 @@ function AdminDashboard() {
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
-              className="w-full mb-3 p-2 border border-gray-300 rounded"
+              className="text-black w-full mb-3 p-2 border border-gray-300 rounded"
               placeholder="Email"
             />
 
@@ -193,7 +203,7 @@ function AdminDashboard() {
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
               }
-              className="w-full mb-3 p-2 border border-gray-300 rounded"
+              className="text-black w-full mb-3 p-2 border border-gray-300 rounded"
               placeholder="New Password"
             />
 
@@ -206,7 +216,7 @@ function AdminDashboard() {
                   activation_status: e.target.value,
                 })
               }
-              className="w-full mb-4 p-2 border border-gray-300 rounded"
+              className="text-black w-full mb-4 p-2 border border-gray-300 rounded"
             >
               <option value="active">Active</option>
               <option value="inactive">Blocked</option>
@@ -215,7 +225,7 @@ function AdminDashboard() {
             <div className="flex justify-between">
               <button
                 onClick={() => setEditingUser(null)}
-                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-black"
               >
                 Cancel
               </button>
