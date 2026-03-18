@@ -23,6 +23,7 @@ export interface UserData {
       id: string;
       username: string;
       email: string;
+      role: string;
     };
   };
 }
@@ -31,6 +32,7 @@ interface AuthContextType {
   userData: UserData | null;
   authenticated: boolean;
   loading: boolean;
+  role: string;
   logout: () => void;
   fetchUser: () => Promise<void>;
 }
@@ -43,12 +45,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<string>("");
 
   // console.log("Context", localStorage.getItem("token"));
   const fetchUser = async () => {
     const token = localStorage.getItem("token");
     try {
       // console.log(token);
+      
 
       if (!token) {
         setAuthenticated(false);
@@ -60,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUserData(res);
       setAuthenticated(true);
+      setRole(res.data.user_data.role);
     } catch (error) {
       console.log("Auth failed:", error);
       // setAuthenticated(false);
@@ -82,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ userData, authenticated, loading, logout, fetchUser }}
+      value={{ userData, authenticated, loading, logout, fetchUser ,role}}
     >
       {children}
     </AuthContext.Provider>

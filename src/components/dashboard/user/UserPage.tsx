@@ -19,7 +19,7 @@ import { useAdmin } from "@/hooks/admin";
 function UserPage() {
   const { userData, authenticated, loading, logout } = useAuthContext();
 
-  // console.log("UserPage render:", userData);
+  console.log("UserPage render:", userData);
   const router = useRouter();
   // const [current,setCurrentUser]=useState()
   // async function fetchUser(){

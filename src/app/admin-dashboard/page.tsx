@@ -1,8 +1,13 @@
-import AdminDashboard from '@/components/dashboard/admin/AdminDashboard'
-import React from 'react'
+import AdminDashboard from "@/components/dashboard/admin/AdminDashboard";
+import { RequireRole } from "@/hooks/admin";
+import React from "react";
 
 function page() {
-  return <AdminDashboard/>
+  return (
+    <RequireRole roleRequired="admin">
+      <AdminDashboard />
+    </RequireRole>
+  );
 }
 
-export default page
+export default page;

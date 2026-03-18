@@ -48,7 +48,7 @@ export default function Login() {
       const res = await loginUser(formData);
       localStorage.setItem("token", res?.access_token);
       await fetchUser();
-      router.replace("/user");
+      router.replace("/");
     } catch (error) {
       console.error("Login failed:", error);
       setError("Invalid credentials. Please try again.");
