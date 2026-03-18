@@ -50,7 +50,7 @@ const navbarItems = [
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             {authenticated ? (
-              <Link href={userData?.data?.user_data?.role === "admin" ? "/admin-dashboard" : "/user"} className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+              <Link href={userData?.data?.user_data?.role === "admin" ? "/admin-dashboard/users" : "/user"} className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
                {userData?.data?.user_data?.role === "admin" ? "Admin Dashboard" : "Dashboard"}
               </Link>
             ) : (

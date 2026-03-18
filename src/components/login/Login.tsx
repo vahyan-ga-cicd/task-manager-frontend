@@ -16,7 +16,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-
+  // const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { fetchUser, authenticated } = useAuthContext();
 
@@ -49,11 +49,10 @@ export default function Login() {
       localStorage.setItem("token", res?.access_token);
       await fetchUser();
       router.replace("/");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login failed:", error);
-      setError("Invalid credentials. Please try again.");
-    } finally {
       setIsSubmitting(false);
+      setError(error?.message || "Login failed. Please try again.");
     }
   };
 

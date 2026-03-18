@@ -29,15 +29,13 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     // console.log(error?.response?.data || error?.message);
 
-    return NextResponse.json(
-    {
-      message:
-        error?.response?.data?.detail || // FastAPI error
-        // error?.response?.data?.message || 
-        // error?.message ||
-        "Internal Server Error",
-    },
-    { status: error?.response?.status || 500 }
-  );
+   return NextResponse.json(
+  {
+    message:
+      error?.response?.data?.detail || 
+      "Internal Server Error",
+  },
+  { status: error?.response?.status || 500 }
+);
   }
 }

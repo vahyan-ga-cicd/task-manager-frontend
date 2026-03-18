@@ -26,13 +26,13 @@ export const loginUser = async (
     const res = await axios.post<IAuthResponse>("/api/auth/login", body);
 
     return res.data;
-  } catch (error: unknown) {
+  } catch (error: any) {
     if (axios.isAxiosError(error)) {
       console.log(error.response?.data || error.message);
       throw new Error(error.response?.data?.message || "Login API failed");
     }
 
-    throw new Error("Unexpected error occurred");
+    throw new Error(error.response?.data?.message || "Login API failed");
   }
 };
 export const getUser = async () => {

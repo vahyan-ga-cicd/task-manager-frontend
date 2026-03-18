@@ -9,11 +9,12 @@ export async function PUT(
     const authHeader = request.headers.get("authorization");
     const token = authHeader?.replace("Bearer ", "");
     const { user_id } = await context.params;
-    const { username, email, password } = await request.json();
+    const { username, email, password , activation_status} = await request.json();
     const payload = {
       username,
       email,
       password,
+      activation_status
     };
     if (!token) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
