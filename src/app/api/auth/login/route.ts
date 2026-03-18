@@ -26,12 +26,18 @@ export async function POST(request: NextRequest) {
     // console.log(res.data.access_token.token)
 
     return NextResponse.json(res.data, { status: 200 });
-  } catch (error: unknown) {
+  } catch (error: any) {
     // console.log(error?.response?.data || error?.message);
 
     return NextResponse.json(
-      { message:error|| "Internal Server Error" },
-      { status: 500 },
-    );
+    {
+      message:
+        error?.response?.data?.detail || // FastAPI error
+        // error?.response?.data?.message || 
+        // error?.message ||
+        "Internal Server Error",
+    },
+    { status: error?.response?.status || 500 }
+  );
   }
 }

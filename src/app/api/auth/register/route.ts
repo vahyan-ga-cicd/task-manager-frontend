@@ -20,17 +20,28 @@ export async function POST(request: NextRequest) {
       email,
       password,
     };
-
+  if (password && (password.length < 6 || password.length > 15)) {
+      return NextResponse.json(
+        { message: "Password must be between 6 and 15 characters" },
+        { status: 400 },
+      );
+    }
     // external API
     const res = await axiosClient.post("/auth/register", payload);
 
     return NextResponse.json(res.data, { status: 200 });
-  } catch (error: unknown) {
-    // console.log(error?.response?.data || error.message);
+  }catch (error: any) {
+  console.log("Full error:", error?.response?.data);
 
-    return NextResponse.json(
-      { message: error || "Internal Server Error" },
-      { status: 500 },
-    );
-  }
+  return NextResponse.json(
+    {
+      message:
+        error?.response?.data?.detail || // FastAPI error
+        // error?.response?.data?.message || 
+        // error?.message ||
+        "Internal Server Error",
+    },
+    { status: error?.response?.status || 500 }
+  );
+}
 }

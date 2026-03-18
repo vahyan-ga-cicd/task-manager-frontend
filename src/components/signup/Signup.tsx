@@ -44,12 +44,9 @@ function Signup() {
 
       // Redirect to login after successful signup
       router.push("/login");
-    } catch (error: unknown) {
-      const err = error as AxiosError<unknown>;
-      const errorMessage = err.response?.data as unknown as {
-        message?: string;
-      };
-      setError(errorMessage?.message || "Signup failed. Please try again.");
+    } catch (error: any) {
+  
+      setError(error?.message );
     } finally {
       setLoading(false);
     }
