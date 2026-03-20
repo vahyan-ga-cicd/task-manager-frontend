@@ -30,7 +30,7 @@ const UserAcc = ({ initialUserData, initialInvoices }: UserAccProps) => {
   const router = useRouter();
   const {
     userData: contextUserData,
-    logout,
+    // logout,
     authenticated,
     loading: authLoading,
   } = useAuthContext();
@@ -96,7 +96,17 @@ const UserAcc = ({ initialUserData, initialInvoices }: UserAccProps) => {
       setPreviewUrl(null);
     }
   };
+const handleLogout = () => {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("invoicetoken"); // ✅ remove invoice token
+    localStorage.removeItem("token"); // (optional if you use another token)
+  }
 
+
+
+  // optional redirect
+  window.location.href = "/login";
+};
   const totalAmount = invoices.reduce(
     (a, i) => a + Number(i.total_invoice_amount),
     0,
@@ -132,7 +142,7 @@ const UserAcc = ({ initialUserData, initialInvoices }: UserAccProps) => {
             </div>
             <div className="flex items-center gap-3 sm:gap-4">
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="flex items-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium  hover:bg-red-50 rounded-lg transition-all"
               >
                 <LogOut className="w-4 h-4" />

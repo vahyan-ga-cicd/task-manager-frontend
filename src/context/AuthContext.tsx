@@ -80,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("invoicetoken");
     setAuthenticated(false);
     setUserData(null);
     router.replace("/login");
