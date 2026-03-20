@@ -2,12 +2,15 @@ import axios, { isAxiosError } from "axios";
 import { axiosClient } from "@/config/axios";
 import { InvoiceCreate, InvoiceResponse } from "@/@types/interface/invoice.interface";
 // import { axiosClient } from "@/config/axios";
-
+const getToken = () => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("invoicetoken");
+};
 export async function getInvoices(): Promise<InvoiceResponse[]> {
-  const token = localStorage.getItem("invoicetoken");
-  if (!token || token === "null" || token === "undefined") {
-    return []; // Return empty array instead of throwing to avoid crashing the dashboard UI
-  }
+  const token = getToken();
+
+  if (!token) return [];
+
   try {
     const res = await axios.get("/api/admin/Invoice/invoices/get-invoice", {
       headers: {
@@ -26,7 +29,7 @@ export async function getInvoices(): Promise<InvoiceResponse[]> {
 
 
 export async function previewInvoice(data: InvoiceCreate): Promise<Blob> {
-  const token = localStorage.getItem("invoicetoken");
+  const token = getToken();
   if (!token || token === "null" || token === "undefined") {
     throw new Error("No valid token found");
   }
@@ -49,7 +52,7 @@ export async function previewInvoice(data: InvoiceCreate): Promise<Blob> {
 
 
 export async function createInvoice(data: InvoiceCreate): Promise<InvoiceResponse> {
-  const token = localStorage.getItem("invoicetoken");
+  const token = getToken();
   if (!token || token === "null" || token === "undefined") {
     throw new Error("No valid token found");
   }
@@ -71,7 +74,7 @@ export async function createInvoice(data: InvoiceCreate): Promise<InvoiceRespons
 
 
 export async function downloadInvoice(invoiceNo: string): Promise<void> {
-  const token = localStorage.getItem("invoicetoken");
+  const token = getToken();
   if (!token || token === "null" || token === "undefined") {
     throw new Error("No valid token found");
   }
