@@ -45,43 +45,44 @@ function Signup() {
       // Redirect to login after successful signup
       router.push("/login");
     } catch (error: any) {
-  
-      setError(error?.message );
+      setError(error?.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-md">
         {/* Decorative background elements */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 blur-3xl -z-10 animate-pulse" />
 
         {/* Main Card */}
-        <div className="relative bg-white/80 backdrop-blur-xl shadow-2xl rounded-3xl p-10 border border-white/50">
-          {/* Logo/Brand */}
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <div className="relative bg-white/80 backdrop-blur-xl shadow-2xl rounded-3xl p-8 sm:p-10 border border-white/50">
+          {/* Logo/Brand Section */}
+          <div className="text-center mb-10 sm:mb-12">
+            <div className="w-20 h-20 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg">
               <User className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
               Create Account
             </h1>
-            <p className="text-gray-600 mt-2">Join us today</p>
+            <p className="text-gray-600 text-sm sm:text-base font-medium">
+              Join us today
+            </p>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-800 text-sm">
+            <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-800 text-sm font-medium">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
             {/* Username Field */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <div className="space-y-2.5">
+              <label className="block text-sm font-semibold text-gray-700">
                 Username
               </label>
               <div className="relative">
@@ -93,15 +94,15 @@ function Signup() {
                   onChange={handleChange}
                   required
                   disabled={loading}
-                  className="w-full pl-12 px-5 py-4 bg-white/50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-300 text-black placeholder-gray-400 backdrop-blur-sm hover:shadow-md"
+                  className="w-full pl-12 pr-5 py-3.5 bg-white/50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-300 text-base text-gray-900 placeholder-gray-400 backdrop-blur-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                 />
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
               </div>
             </div>
 
             {/* Email Field */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <div className="space-y-2.5">
+              <label className="block text-sm font-semibold text-gray-700">
                 Email Address
               </label>
               <div className="relative">
@@ -113,15 +114,15 @@ function Signup() {
                   onChange={handleChange}
                   required
                   disabled={loading}
-                  className="w-full px-5 pl-12 py-4 bg-white/50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-black placeholder-gray-400 backdrop-blur-sm hover:shadow-md"
+                  className="w-full pl-12 pr-5 py-3.5 bg-white/50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base text-gray-900 placeholder-gray-400 backdrop-blur-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                 />
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 " />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
               </div>
             </div>
 
             {/* Password Field */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <div className="space-y-2.5">
+              <label className="block text-sm font-semibold text-gray-700">
                 Password
               </label>
               <div className="relative">
@@ -133,13 +134,14 @@ function Signup() {
                   onChange={handleChange}
                   required
                   disabled={loading}
-                  className="w-full px-5 py-4 pr-14 bg-white/50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-300 text-black text-lg placeholder-gray-500 backdrop-blur-sm hover:shadow-md"
+                  className="w-full pl-5 pr-14 py-3.5 bg-white/50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-300 text-base text-gray-900 placeholder-gray-400 backdrop-blur-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                 />
                 <button
                   type="button"
                   onClick={togglePasswordVisibility}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-gray-700 transition-colors duration-200 hover:bg-gray-100 rounded-xl"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-gray-700 transition-colors duration-200 hover:bg-gray-100 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
                   disabled={loading}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -150,12 +152,12 @@ function Signup() {
             <button
               type="submit"
               disabled={loading}
-              className="group w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-4 px-6 rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl hover:from-emerald-700 hover:to-teal-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/30 transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+              className="w-full mt-8 bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3.5 px-6 rounded-2xl font-semibold text-base shadow-xl hover:shadow-2xl hover:from-emerald-700 hover:to-teal-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/30 transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2.5"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Creating Account...
+                  <span>Creating Account...</span>
                 </>
               ) : (
                 "Create Account"
@@ -163,9 +165,9 @@ function Signup() {
             </button>
 
             {/* Divider */}
-            <div className="relative flex items-center py-4">
+            <div className="relative flex items-center gap-4 py-6">
               <div className="flex-grow border-t border-gray-300" />
-              <span className="flex-shrink mx-4 text-xs text-gray-500 font-medium">
+              <span className="flex-shrink-0 text-xs text-gray-500 font-medium uppercase tracking-wide">
                 or
               </span>
               <div className="flex-grow border-t border-gray-300" />
@@ -173,12 +175,12 @@ function Signup() {
           </form>
 
           {/* Footer */}
-          <div className="text-center pt-6">
+          <div className="text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{" "}
               <a
                 href="/login"
-                className="font-semibold text-blue-600 hover:text-blue-700 transition-colors duration-200"
+                className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors duration-200"
               >
                 Sign in here
               </a>
