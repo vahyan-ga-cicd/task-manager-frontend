@@ -19,22 +19,33 @@ const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({
         style={{ maxWidth: "900px", height: "calc(100vh - 48px)" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-violet-600 to-indigo-600 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <Eye className="w-4.5 h-4.5 text-black" />
-            <p className="text-base font-bold text-black">Invoice Preview</p>
-          </div>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600">
+          {/* Left Section */}
           <div className="flex items-center gap-2">
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <Eye className="w-4 h-4 text-white" />
+            </div>
+            <p className="text-sm font-semibold text-white tracking-wide">
+              Invoice Preview
+            </p>
+          </div>
+
+          {/* Right Section */}
+          <div className="flex items-center gap-2">
+            {/* Download Button */}
             <a
               href={previewUrl}
               download="invoice.pdf"
-              className="p-5 inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-white/20 hover:bg-white/30 rounded-xl transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-white rounded-lg hover:bg-gray-100 transition-all shadow-sm"
             >
-              <Download className="w-3.5 h-3.5" /> Download
+              <Download className="w-3.5 h-3.5" />
+              Download
             </a>
+
+            {/* Close Button */}
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all"
+              className="cursor-pointer w-8 h-8 flex items-center justify-center bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all backdrop-blur-sm"
             >
               <X className="w-4 h-4" />
             </button>

@@ -23,16 +23,20 @@ const InvoiceTable = ({
 }: InvoiceTableProps) => {
   const [previewingId, setPreviewingId] = useState<string | null>(null);
 
- const filtered = invoices.filter((inv) => {
-  const query = searchQuery.toLowerCase();
+  const filtered = invoices
+    .filter((inv) => {
+      const query = searchQuery.toLowerCase();
 
-  return (
-    inv.invoice_no?.toLowerCase().includes(query) ||
-    inv.bill_to_name?.toLowerCase().includes(query) ||
-    inv.date?.toLowerCase().includes(query) ||
-    String(inv.total_invoice_amount).includes(query)
-  );
-});
+      return (
+        inv.invoice_no?.toLowerCase().includes(query) ||
+        inv.bill_to_name?.toLowerCase().includes(query) ||
+        inv.date?.toLowerCase().includes(query) ||
+        String(inv.total_invoice_amount).includes(query)
+      );
+    })
+    .sort((a, b) =>
+      b.invoice_no.localeCompare(a.invoice_no, undefined, { numeric: true }),
+    );
 
   const handlePreview = async (invoice: InvoiceResponse) => {
     setPreviewingId(invoice.invoice_no);
@@ -45,39 +49,36 @@ const InvoiceTable = ({
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden w-full">
-<div className="p-5 sm:p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center gap-4">
-
-  {/* Search Input */}
-  <div className="flex-1">
-    <div className="relative w-full">
-      
-      {/* Icon */}
-      {/* <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+      <div className="p-5 sm:p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center gap-4">
+        {/* Search Input */}
+        <div className="flex-1">
+          <div className="relative w-full">
+            {/* Icon */}
+            {/* <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
         <Search className="h-4 w-4 text-slate-400" />
       </div> */}
 
-      <input
-        type="text"
-        className="w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white text-sm transition-all"
-        placeholder="Search invoices..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-      />
-    </div>
-  </div>
+            <input
+              type="text"
+              className="w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white text-sm transition-all"
+              placeholder="Search invoices..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
 
-  {/* Button */}
-  <div className="flex-shrink-0">
-    <button
-      onClick={onNewInvoice}
-      className="inline-flex items-center px-5 py-2.5 text-sm font-semibold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all gap-2"
-    >
-      <Plus className="w-4 h-4" />
-      New Invoice
-    </button>
-  </div>
-
-</div>
+        {/* Button */}
+        <div className="flex-shrink-0">
+          <button
+            onClick={onNewInvoice}
+            className="inline-flex items-center px-5 py-2.5 text-sm font-semibold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            New Invoice
+          </button>
+        </div>
+      </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-left">
