@@ -1,5 +1,5 @@
 import React from "react";
-import { FileText, TrendingUp, Wallet, Zap } from "lucide-react";
+import { FileText, TrendingUp, Wallet,IndianRupee  } from "lucide-react";
 
 interface InvoiceStatsProps {
   totalInvoices: number;
@@ -32,7 +32,7 @@ const cards = [
    {
     key: "profit",
     label: "P & L",
-    icon: Zap,
+    icon: IndianRupee,
     from: "from-indigo-500",
     to: "to-blue-500",
     ring: "ring-indigo-100",
