@@ -29,6 +29,16 @@ const cards = [
     text: "text-emerald-600",
     bg: "bg-emerald-50",
   },
+   {
+    key: "profit",
+    label: "P & L",
+    icon: Zap,
+    from: "from-indigo-500",
+    to: "to-blue-500",
+    ring: "ring-indigo-100",
+    text: "text-indigo-600",
+    bg: "bg-indigo-50",
+  },
   {
     key: "outstanding",
     label: "Total Balance Credit",
@@ -39,16 +49,7 @@ const cards = [
     text: "text-amber-600",
     bg: "bg-amber-50",
   },
-  {
-    key: "profit",
-    label: "P & L",
-    icon: Zap,
-    from: "from-indigo-500",
-    to: "to-blue-500",
-    ring: "ring-indigo-100",
-    text: "text-indigo-600",
-    bg: "bg-indigo-50",
-  },
+ 
 ];
 
 const InvoiceStats = ({
