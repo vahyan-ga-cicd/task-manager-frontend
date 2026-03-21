@@ -37,12 +37,15 @@ const UserAcc = ({ initialUserData, initialInvoices }: UserAccProps) => {
   const [invoices, setInvoices] = useState<InvoiceResponse[]>(
     initialInvoices || [],
   );
+  console.log("Invoice Data", invoices);
   const [loading, setLoading] = useState(!initialInvoices);
   const [searchQuery, setSearchQuery] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
+  const [selectedInvoices, setSelectedInvoices] = useState<InvoiceResponse[]>(
+    [],
+  );
   const userData = initialUserData || contextUserData;
 
   const fetchData = useCallback(async () => {
@@ -69,7 +72,7 @@ const UserAcc = ({ initialUserData, initialInvoices }: UserAccProps) => {
     try {
       setIsPreviewLoading(true);
       const blob = await previewInvoice(invoice);
-      window.open(URL.createObjectURL(blob)); 
+      window.open(URL.createObjectURL(blob));
     } catch {
       alert("Failed to generate preview. Please try again.");
     } finally {
@@ -105,12 +108,30 @@ const UserAcc = ({ initialUserData, initialInvoices }: UserAccProps) => {
     // optional redirect
     window.location.href = "/login";
   };
-  const totalAmount = invoices.reduce(
+  const activeInvoices =
+    selectedInvoices.length > 0 ? selectedInvoices : invoices;
+
+  const totalAmount = activeInvoices.reduce(
     (a, i) => a + Number(i.total_invoice_amount),
     0,
   );
-  const totalBalance = invoices.reduce((a, i) => a + Number(i.balance), 0);
 
+  const totalBalance = activeInvoices.reduce(
+    (a, i) => a + Number(i.balance),
+    0,
+  );
+
+  // const totalProfit = activeInvoices.reduce(
+  //   (a, i) => a + Number(i.received_amount || 0),
+  //   0,
+  // );
+const totalProfit = activeInvoices.reduce((total, invoice) => {
+  return (
+    total +
+    (Number(invoice.total_invoice_amount || 0) -
+      Number(invoice.total_amount_before_tax || 0))
+  );
+}, 0);
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -172,6 +193,7 @@ const UserAcc = ({ initialUserData, initialInvoices }: UserAccProps) => {
           totalInvoices={invoices.length}
           totalRevenue={totalAmount}
           totalOutstanding={totalBalance}
+          totalProfit={totalProfit}
         />
         {/* </div> */}
 
@@ -184,6 +206,7 @@ const UserAcc = ({ initialUserData, initialInvoices }: UserAccProps) => {
             onPreview={handlePreview}
             isPreviewLoading={isPreviewLoading}
             onNewInvoice={() => setIsCreateModalOpen(true)}
+            onSelectionChange={setSelectedInvoices} // ✅ FIXED
           />
         </div>
       </main>

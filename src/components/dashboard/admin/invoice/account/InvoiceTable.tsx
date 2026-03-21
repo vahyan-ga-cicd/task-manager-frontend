@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { Search, Plus, Calendar, Download, Eye, FileText } from "lucide-react";
 import { InvoiceResponse } from "@/@types/interface/invoice.interface";
 
@@ -10,6 +12,7 @@ interface InvoiceTableProps {
   onPreview: (invoice: InvoiceResponse) => Promise<void>;
   isPreviewLoading: boolean;
   onNewInvoice: () => void;
+  onSelectionChange: (selected: InvoiceResponse[]) => void;
 }
 
 const InvoiceTable = ({
@@ -20,9 +23,10 @@ const InvoiceTable = ({
   onPreview,
   isPreviewLoading,
   onNewInvoice,
+  onSelectionChange,
 }: InvoiceTableProps) => {
   const [previewingId, setPreviewingId] = useState<string | null>(null);
-
+  const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
   const filtered = invoices
     .filter((inv) => {
       const query = searchQuery.toLowerCase();
@@ -46,6 +50,13 @@ const InvoiceTable = ({
       setPreviewingId(null);
     }
   };
+useEffect(() => {
+  const selectedData = invoices.filter((i) =>
+    selectedInvoices.includes(i.invoice_no)
+  );
+
+  onSelectionChange(selectedData);
+}, [selectedInvoices]);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden w-full">
@@ -55,8 +66,8 @@ const InvoiceTable = ({
           <div className="relative w-full">
             {/* Icon */}
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-        <Search className="h-4 w-4 text-slate-400" />
-      </div>
+              <Search className="h-4 w-4 text-slate-400" />
+            </div>
 
             <input
               type="text"
@@ -84,6 +95,18 @@ const InvoiceTable = ({
         <table className="w-full text-left">
           <thead className="bg-slate-50/50">
             <tr>
+              <th className="px-5 py-4">
+                <input
+                  type="checkbox"
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedInvoices(filtered.map((i) => i.invoice_no));
+                    } else {
+                      setSelectedInvoices([]);
+                    }
+                  }}
+                />
+              </th>
               <th className="px-5 sm:px-6 py-4 text-xs font-bold text-slate-600 uppercase tracking-wider">
                 Invoice
               </th>
@@ -111,6 +134,24 @@ const InvoiceTable = ({
                   key={invoice.invoice_no}
                   className="hover:bg-slate-50/80 transition-colors group"
                 >
+                  <td className="px-5 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedInvoices.includes(invoice.invoice_no)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedInvoices((prev) => [
+                            ...prev,
+                            invoice.invoice_no,
+                          ]);
+                        } else {
+                          setSelectedInvoices((prev) =>
+                            prev.filter((id) => id !== invoice.invoice_no),
+                          );
+                        }
+                      }}
+                    />
+                  </td>
                   <td className="px-5 sm:px-6 py-4 whitespace-nowrap">
                     <span className="font-semibold text-slate-900">
                       #{invoice.invoice_no}
