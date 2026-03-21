@@ -12,7 +12,7 @@ import { FileText, LogOut } from "lucide-react";
 import InvoiceStats from "./InvoiceStats";
 import InvoiceTable from "./InvoiceTable";
 import UserProfileCard from "./UserProfileCard";
-import InvoicePreviewModal from "./InvoicePreviewModal";
+// import InvoicePreviewModal from "./InvoicePreviewModal";
 import CreateInvoiceModal from "./CreateInvoiceModal";
 import {
   createInvoice,
@@ -69,7 +69,7 @@ const UserAcc = ({ initialUserData, initialInvoices }: UserAccProps) => {
     try {
       setIsPreviewLoading(true);
       const blob = await previewInvoice(invoice);
-      setPreviewUrl(URL.createObjectURL(blob));
+      window.open(URL.createObjectURL(blob)); 
     } catch {
       alert("Failed to generate preview. Please try again.");
     } finally {
@@ -90,23 +90,21 @@ const UserAcc = ({ initialUserData, initialInvoices }: UserAccProps) => {
     await fetchData();
   };
 
-  const closePreview = () => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
+  // const closePreview = () => {
+  //   if (previewUrl) {
+  //     URL.revokeObjectURL(previewUrl);
+  //     setPreviewUrl(null);
+  //   }
+  // };
+  const handleLogout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("invoicetoken"); // ✅ remove invoice token
+      localStorage.removeItem("token"); // (optional if you use another token)
     }
+
+    // optional redirect
+    window.location.href = "/login";
   };
-const handleLogout = () => {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("invoicetoken"); // ✅ remove invoice token
-    localStorage.removeItem("token"); // (optional if you use another token)
-  }
-
-
-
-  // optional redirect
-  window.location.href = "/login";
-};
   const totalAmount = invoices.reduce(
     (a, i) => a + Number(i.total_invoice_amount),
     0,
@@ -191,7 +189,7 @@ const handleLogout = () => {
       </main>
 
       {/* Modals */}
-      <InvoicePreviewModal previewUrl={previewUrl} onClose={closePreview} />
+      {/* <InvoicePreviewModal previewUrl={previewUrl} onClose={closePreview} /> */}
 
       <CreateInvoiceModal
         isOpen={isCreateModalOpen}

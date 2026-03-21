@@ -30,7 +30,7 @@ const cards = [
   },
   {
     key: "outstanding",
-    label: "Outstanding",
+    label: "Total Balance Credit",
     icon: Wallet,
     from: "from-amber-400",
     to: "to-orange-500",
@@ -38,16 +38,16 @@ const cards = [
     text: "text-amber-600",
     bg: "bg-amber-50",
   },
-  {
-    key: "plan",
-    label: "Active Plan",
-    icon: Zap,
-    from: "from-indigo-500",
-    to: "to-blue-500",
-    ring: "ring-indigo-100",
-    text: "text-indigo-600",
-    bg: "bg-indigo-50",
-  },
+  // {
+  //   key: "plan",
+  //   label: "Active Plan",
+  //   icon: Zap,
+  //   from: "from-indigo-500",
+  //   to: "to-blue-500",
+  //   ring: "ring-indigo-100",
+  //   text: "text-indigo-600",
+  //   bg: "bg-indigo-50",
+  // },
 ];
 
 const InvoiceStats = ({
