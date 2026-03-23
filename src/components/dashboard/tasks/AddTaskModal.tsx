@@ -26,7 +26,8 @@ export default function AddTaskModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isAdmin = userData?.data?.user_data?.role === "admin";
-  const currentUserId = userData?.data?.user_data?.user_id;
+  const currentUserId = userData?.data?.user_data?.id;
+
 
   useEffect(() => {
     if (isOpen && isAdmin) {
