@@ -50,7 +50,7 @@ export default function Navbar() {
               <Link
                 href="/user"
                 className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 
-      hover:text-blue-600 hover:bg-blue-600 
+      hover:text-white hover:bg-blue-600 
       transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 Account
@@ -60,7 +60,7 @@ export default function Navbar() {
             <Link
               href="/ddocs/ddocs-frontend"
               className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 
-    hover:text-blue-600 hover:bg-indigo-600 
+    hover:text-white hover:bg-indigo-600 
     transition-all duration-200 shadow-sm hover:shadow-md"
             >
               DDocs
@@ -124,20 +124,22 @@ export default function Navbar() {
             <div className="space-y-4">
               {/* Mobile Nav Links */}
               <div className="space-y-2 pt-2">
-                <Link
+                {/* <Link
                   href="#features"
                   className="block py-3 px-4 text-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all font-medium"
                   onClick={closeMobileMenu}
                 >
                   Features
-                </Link>
-                <Link
-                  href="#about"
-                  className="block py-3 px-4 text-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all font-medium"
-                  onClick={closeMobileMenu}
-                >
-                  About
-                </Link>
+                </Link> */}
+                {authenticated && (
+                  <Link
+                    href="/user"
+                    className="block py-3 px-4 text-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all font-medium"
+                    onClick={closeMobileMenu}
+                  >
+                    Account
+                  </Link>
+                )}
                 <Link
                   href="/ddocs/ddocs-frontend"
                   className="block py-3 px-4 text-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all font-medium"
