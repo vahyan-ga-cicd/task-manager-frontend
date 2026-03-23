@@ -158,17 +158,17 @@ export default function Login() {
             </button>
 
             {/* Divider */}
-            <div className="relative flex items-center py-4">
+            {/* <div className="relative flex items-center py-4">
               <div className="flex-grow border-t border-gray-300" />
               <span className="flex-shrink mx-4 text-xs text-gray-500 font-medium">
                 or continue with
               </span>
               <div className="flex-grow border-t border-gray-300" />
-            </div>
+            </div> */}
           </form>
 
           {/* Footer */}
-          <div className="text-center pt-6">
+          {/* <div className="text-center pt-6">
             <p className="text-sm text-gray-600">
               Don&apos;t have an account?{" "}
               <a
@@ -178,7 +178,7 @@ export default function Login() {
                 Create one
               </a>
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
