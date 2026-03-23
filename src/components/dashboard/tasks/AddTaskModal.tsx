@@ -9,6 +9,8 @@ interface AddTaskModalProps {
   onAddTask: (data: any) => void;
 }
 
+type Priority = "Normal" | "Medium" | "High";
+
 export default function AddTaskModal({
   isOpen,
   onClose,
@@ -17,12 +19,14 @@ export default function AddTaskModal({
   const { fetchUser, userData } = useAuthContext();
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDescription, setNewTaskDescription] = useState("");
+  const [priority, setPriority] = useState<Priority>("Normal");
   const [assignedTo, setAssignedTo] = useState("");
   const [deadline, setDeadline] = useState("");
   const [usersList, setUsersList] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isAdmin = userData?.data?.user_data?.role === "admin";
+  const currentUserId = userData?.data?.user_data?.user_id;
 
   useEffect(() => {
     if (isOpen && isAdmin) {
@@ -49,8 +53,8 @@ export default function AddTaskModal({
 
   try {
     const taskData = isAdmin 
-      ? { title: newTaskTitle, description: newTaskDescription, assigned_to: assignedTo, deadline }
-      : { title: newTaskTitle, description: newTaskDescription };
+      ? { title: newTaskTitle, description: newTaskDescription, assigned_to: assignedTo, deadline, priority }
+      : { title: newTaskTitle, description: newTaskDescription, priority };
 
     await onAddTask(taskData);
 
@@ -58,6 +62,7 @@ export default function AddTaskModal({
 
     setNewTaskTitle('');
     setNewTaskDescription('');
+    setPriority('Normal');
     setAssignedTo('');
     setDeadline('');
     onClose();
@@ -128,6 +133,34 @@ export default function AddTaskModal({
                 placeholder="Enter task details..."
               ></textarea>
             </div>
+
+            {/* Priority Selection */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Priority Level
+              </label>
+              <div className="flex gap-3">
+                {[
+                  { id: 'Normal', color: 'bg-blue-50 text-blue-600 border-blue-200 ring-blue-500', label: 'Normal' },
+                  { id: 'Medium', color: 'bg-amber-50 text-amber-600 border-amber-200 ring-amber-500', label: 'Medium' },
+                  { id: 'High', color: 'bg-red-50 text-black border-red-200 ring-red-500', label: 'High' }
+                ].map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setPriority(p.id as Priority)}
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-bold transition-all ${
+                      priority === p.id 
+                        ? `${p.color} border-2 ring-2 ring-offset-1` 
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {isAdmin && (
               <>
                 <div>
@@ -141,7 +174,9 @@ export default function AddTaskModal({
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-gray-900"
                   >
                     <option value="">Select Employee</option>
-                    {usersList.map((user: any) => (
+                    {usersList
+                      .filter((user: any) => user.user_id !== currentUserId)
+                      .map((user: any) => (
                       <option key={user.user_id} value={user.user_id}>
                         {user.username} ({user.email})
                       </option>

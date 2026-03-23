@@ -4,26 +4,26 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ task_id: string }> }
+  { params }: { params: Promise<{ target_user_id: string; task_id: string }> }
 ) {
   try {
     const authHeader = request.headers.get("authorization");
     const token = authHeader?.replace("Bearer ", "");
 
-    const { task_id } = await params;
+    const { target_user_id, task_id } = await params;
     const body = await request.json();
 
     const res = await axiosClient.put(
-      `/tasks/update-task/${task_id}`,
+      `/admin/update-task/${target_user_id}/${task_id}`,
       body,
       getAuthHeaders(token || "")
     );
 
     return NextResponse.json(res.data);
-  } catch (error: unknown) {
+  } catch (error: any) {
     if (axios.isAxiosError(error)) {
         return NextResponse.json(
-            { message: error.response?.data?.detail || error.response?.data?.message || "Update failed" },
+            { message: error.response?.data?.detail || error.response?.data?.message || "Admin update failed" },
             { status: error.response?.status || 500 }
         );
     }
