@@ -1,12 +1,12 @@
 "use client";
 
 import { useAuthContext } from "@/context/AuthContext";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface AddTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddTask: (title: string, description: string) => void;
+  onAddTask: (data: any) => void;
 }
 
 export default function AddTaskModal({
@@ -14,10 +14,31 @@ export default function AddTaskModal({
   onClose,
   onAddTask,
 }: AddTaskModalProps) {
-  const { fetchUser } = useAuthContext();
+  const { fetchUser, userData } = useAuthContext();
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDescription, setNewTaskDescription] = useState("");
+  const [assignedTo, setAssignedTo] = useState("");
+  const [deadline, setDeadline] = useState("");
+  const [usersList, setUsersList] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isAdmin = userData?.data?.user_data?.role === "admin";
+
+  useEffect(() => {
+    if (isOpen && isAdmin) {
+      const loadUsers = async () => {
+        const { getuserslist } = await import("@/utils/api/admin/admin");
+        try {
+          const users = await getuserslist();
+          setUsersList(users);
+        } catch (err) {
+          console.error("Failed to load users", err);
+        }
+      };
+      loadUsers();
+    }
+  }, [isOpen, isAdmin]);
+
   if (!isOpen) return null;
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,12 +48,18 @@ export default function AddTaskModal({
   setIsSubmitting(true);
 
   try {
-    await onAddTask(newTaskTitle, newTaskDescription);
+    const taskData = isAdmin 
+      ? { title: newTaskTitle, description: newTaskDescription, assigned_to: assignedTo, deadline }
+      : { title: newTaskTitle, description: newTaskDescription };
+
+    await onAddTask(taskData);
 
     await fetchUser();
 
     setNewTaskTitle('');
     setNewTaskDescription('');
+    setAssignedTo('');
+    setDeadline('');
     onClose();
   } catch (err) {
     console.log(err);
@@ -101,6 +128,40 @@ export default function AddTaskModal({
                 placeholder="Enter task details..."
               ></textarea>
             </div>
+            {isAdmin && (
+              <>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Assign to Employee <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={assignedTo}
+                    onChange={(e) => setAssignedTo(e.target.value)}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-gray-900"
+                  >
+                    <option value="">Select Employee</option>
+                    {usersList.map((user: any) => (
+                      <option key={user.user_id} value={user.user_id}>
+                        {user.username} ({user.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Deadline <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={deadline}
+                    onChange={(e) => setDeadline(e.target.value)}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-gray-900"
+                  />
+                </div>
+              </>
+            )}
           </div>
           <div className="mt-8 flex justify-end gap-3">
             <button

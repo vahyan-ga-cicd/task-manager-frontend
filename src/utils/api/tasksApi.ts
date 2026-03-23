@@ -89,3 +89,32 @@ export const deleteTask = async (task_id: string) => {
     throw new Error("Unexpected error occurred");
   }
 };
+export const fetchTaskStats = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await axios.get("/api/tasks/stats", getAuthHeaders(token as string));
+    return res.data;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      console.log(error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || "Fetch stats failed");
+    }
+    throw new Error("Unexpected error occurred");
+  }
+};
+export const adminDeleteTask = async (targetUserId: string, taskId: string) => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await axios.delete(
+      `/api/admin/deletetask/${targetUserId}/${taskId}`,
+      getAuthHeaders(token || "")
+    );
+    return res.data;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      console.log(error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || "Delete task failed");
+    }
+    throw new Error("Unexpected error occurred");
+  }
+};

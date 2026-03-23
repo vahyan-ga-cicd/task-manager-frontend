@@ -34,6 +34,7 @@ const UserAcc = ({ initialUserData, initialInvoices }: UserAccProps) => {
     authenticated,
     loading: authLoading,
   } = useAuthContext();
+  // console.log(userData)
   const [invoices, setInvoices] = useState<InvoiceResponse[]>(
     initialInvoices || [],
   );

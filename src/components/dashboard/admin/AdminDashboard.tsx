@@ -2,7 +2,7 @@
 
 import { useAdmin } from "@/hooks/admin";
 import React, { useState, useMemo } from "react";
-import { updateuser } from "@/utils/api/admin/admin";
+import { createuser, updateuser } from "@/utils/api/admin/admin";
 import Sidebar from "./Sidebar";
 
 /* ── Inline SVG Icons ── */
@@ -130,6 +130,16 @@ const Icons = {
       />
     </svg>
   ),
+  Plus: () => (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+      <path
+        d="M6.5 2v9M2 6.5h9"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  ),
   EmptyState: () => (
     <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
       <rect
@@ -233,6 +243,14 @@ const StatIllustration = ({
   );
 };
 
+/* ── Add User Modal ── */
+const ADD_USER_DEFAULTS = {
+  username: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+};
+
 function AdminDashboard() {
   const { users, fetchAllUsers } = useAdmin();
 
@@ -250,6 +268,15 @@ function AdminDashboard() {
     password: "",
     activation_status: "",
   });
+
+  // ── Add User state ──
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [addUserData, setAddUserData] = useState(ADD_USER_DEFAULTS);
+  const [addUserErrors, setAddUserErrors] = useState<Record<string, string>>(
+    {},
+  );
+  const [showAddPwd, setShowAddPwd] = useState(false);
+  const [showAddConfirmPwd, setShowAddConfirmPwd] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -283,6 +310,64 @@ function AdminDashboard() {
       next.has(userId) ? next.delete(userId) : next.add(userId);
       return next;
     });
+  };
+
+  // ── Add User validation & submit ──
+  const validateAddUser = () => {
+    const errors: Record<string, string> = {};
+    if (!addUserData.username.trim()) errors.username = "Username is required";
+    if (!addUserData.email.trim()) errors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(addUserData.email))
+      errors.email = "Enter a valid email";
+    if (!addUserData.password) {
+      errors.password = "Password is required";
+    } else if (
+      addUserData.password.length < 6 ||
+      addUserData.password.length > 15
+    ) {
+      errors.password = "Password must be 6–15 characters";
+    } else if (!/[a-zA-Z]/.test(addUserData.password)) {
+      errors.password = "Password must contain at least one letter";
+    } else if (!/[0-9]/.test(addUserData.password)) {
+      errors.password = "Password must contain at least one number";
+    } else if (!/[^a-zA-Z0-9]/.test(addUserData.password)) {
+      errors.password =
+        "Password must contain at least one special character (e.g. @, #, !)";
+    }
+    if (!addUserData.confirmPassword)
+      errors.confirmPassword = "Please confirm your password";
+    else if (addUserData.password !== addUserData.confirmPassword)
+      errors.confirmPassword = "Passwords do not match";
+    return errors;
+  };
+
+  const handleAddUserSave = async() => {
+    const errors = validateAddUser();
+    if (Object.keys(errors).length > 0) {
+      setAddUserErrors(errors);
+      return;
+    }
+    const payload = {
+      username: addUserData.username,
+      email: addUserData.email,
+      password: addUserData.password,
+    };
+   const res=await createuser(payload)
+      
+    console.log("New User Data:", res);
+    setShowAddUser(false);
+    setAddUserData(ADD_USER_DEFAULTS);
+    setAddUserErrors({});
+    setShowAddPwd(false);
+    setShowAddConfirmPwd(false);
+  };
+
+  const handleAddUserClose = () => {
+    setShowAddUser(false);
+    setAddUserData(ADD_USER_DEFAULTS);
+    setAddUserErrors({});
+    setShowAddPwd(false);
+    setShowAddConfirmPwd(false);
   };
 
   const filteredUsers = useMemo(() => {
@@ -338,6 +423,12 @@ function AdminDashboard() {
     padding: "10px 14px",
     width: "100%",
     outline: "none",
+  };
+
+  const inputErrorStyle = {
+    ...inputStyle,
+    border: "1px solid #fca5a5",
+    background: "#fff5f5",
   };
 
   return (
@@ -404,22 +495,44 @@ function AdminDashboard() {
                 View, search, and manage all registered accounts
               </p>
             </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "6px 12px",
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: 99,
-                fontSize: 11.5,
-                color: "#64748b",
-                fontWeight: 500,
-              }}
-            >
-              <Icons.Info />
-              {filteredUsers.length} of {totalUsers} records
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 12px",
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 99,
+                  fontSize: 11.5,
+                  color: "#64748b",
+                  fontWeight: 500,
+                }}
+              >
+                <Icons.Info />
+                {filteredUsers.length} of {totalUsers} records
+              </div>
+              {/* ── Add User Button ── */}
+              <button
+                onClick={() => setShowAddUser(true)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "7px 14px",
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  color: "#ffffff",
+                  background: "#0f172a",
+                  border: "none",
+                  borderRadius: 99,
+                  cursor: "pointer",
+                }}
+              >
+                <Icons.Plus />
+                Add User
+              </button>
             </div>
           </div>
 
@@ -730,7 +843,7 @@ function AdminDashboard() {
                         style={{
                           padding: "14px 18px",
                           maxWidth: 220,
-                          textAlign: "center", // centers the box horizontally
+                          textAlign: "center",
                         }}
                       >
                         {user.hashed_password ? (
@@ -740,10 +853,8 @@ function AdminDashboard() {
                               alignItems: "center",
                               justifyContent: "center",
                               gap: 6,
-
-                              backgroundColor: "green", // FULL box green
+                              backgroundColor: "green",
                               color: "#fff",
-
                               borderRadius: 8,
                               padding: "6px 12px",
                               minWidth: 80,
@@ -754,12 +865,8 @@ function AdminDashboard() {
                             >
                               <Icons.Shield />
                             </span>
-
                             <span
-                              style={{
-                                fontFamily: "monospace",
-                                fontSize: 11,
-                              }}
+                              style={{ fontFamily: "monospace", fontSize: 11 }}
                             >
                               True
                             </span>
@@ -771,10 +878,8 @@ function AdminDashboard() {
                               alignItems: "center",
                               justifyContent: "center",
                               gap: 6,
-
                               backgroundColor: "red",
                               color: "#fff",
-
                               borderRadius: 8,
                               padding: "6px 12px",
                               minWidth: 80,
@@ -1030,7 +1135,6 @@ function AdminDashboard() {
                       >
                         <Icons.Hash /> Hash:
                       </span>
-
                       <span
                         style={{
                           fontFamily: "monospace",
@@ -1320,6 +1424,343 @@ function AdminDashboard() {
                 }}
               >
                 Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add User Modal ── */}
+      {showAddUser && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15,23,42,0.4)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 50,
+            padding: "0 16px",
+          }}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 20,
+              width: "100%",
+              maxWidth: 440,
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 24px 64px rgba(0,0,0,0.10)",
+              overflow: "hidden",
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "16px 24px",
+                borderBottom: "1px solid #f1f5f9",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 10,
+                    background: "#f1f5f9",
+                    color: "#475569",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Icons.Plus />
+                </div>
+                <div>
+                  <p
+                    style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}
+                  >
+                    Add New User
+                  </p>
+                  <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>
+                    Fill in the details below
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleAddUserClose}
+                style={{
+                  padding: 6,
+                  borderRadius: 8,
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  cursor: "pointer",
+                  color: "#64748b",
+                }}
+              >
+                <Icons.Close />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div
+              style={{
+                padding: "20px 24px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 14,
+              }}
+            >
+              {/* Username */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 10.5,
+                    fontWeight: 600,
+                    color: "#64748b",
+                    marginBottom: 6,
+                    textTransform: "uppercase" as const,
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  Username
+                </label>
+                <input
+                  type="text"
+                  value={addUserData.username}
+                  onChange={(e) => {
+                    setAddUserData({
+                      ...addUserData,
+                      username: e.target.value,
+                    });
+                    setAddUserErrors({ ...addUserErrors, username: "" });
+                  }}
+                  placeholder="Enter username"
+                  style={addUserErrors.username ? inputErrorStyle : inputStyle}
+                />
+                {addUserErrors.username && (
+                  <p style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>
+                    {addUserErrors.username}
+                  </p>
+                )}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 10.5,
+                    fontWeight: 600,
+                    color: "#64748b",
+                    marginBottom: 6,
+                    textTransform: "uppercase" as const,
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={addUserData.email}
+                  onChange={(e) => {
+                    setAddUserData({ ...addUserData, email: e.target.value });
+                    setAddUserErrors({ ...addUserErrors, email: "" });
+                  }}
+                  placeholder="Enter email address"
+                  style={addUserErrors.email ? inputErrorStyle : inputStyle}
+                />
+                {addUserErrors.email && (
+                  <p style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>
+                    {addUserErrors.email}
+                  </p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 10.5,
+                    fontWeight: 600,
+                    color: "#64748b",
+                    marginBottom: 6,
+                    textTransform: "uppercase" as const,
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  Password
+                  <span
+                    style={{
+                      marginLeft: 6,
+                      fontSize: 10,
+                      fontWeight: 400,
+                      color: "#94a3b8",
+                      textTransform: "none",
+                      letterSpacing: 0,
+                    }}
+                  >
+                    (6–15 chars · letters + numbers + special, e.g. dipayan@123)
+                  </span>
+                </label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showAddPwd ? "text" : "password"}
+                    value={addUserData.password}
+                    onChange={(e) => {
+                      setAddUserData({
+                        ...addUserData,
+                        password: e.target.value,
+                      });
+                      setAddUserErrors({ ...addUserErrors, password: "" });
+                    }}
+                    placeholder="e.g. dipayan@123"
+                    style={{
+                      ...(addUserErrors.password
+                        ? inputErrorStyle
+                        : inputStyle),
+                      paddingRight: 40,
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAddPwd(!showAddPwd)}
+                    style={{
+                      position: "absolute",
+                      right: 12,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 0,
+                      color: "#94a3b8",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    {showAddPwd ? <Icons.EyeOff /> : <Icons.Eye />}
+                  </button>
+                </div>
+                {addUserErrors.password && (
+                  <p style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>
+                    {addUserErrors.password}
+                  </p>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 10.5,
+                    fontWeight: 600,
+                    color: "#64748b",
+                    marginBottom: 6,
+                    textTransform: "uppercase" as const,
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  Confirm Password
+                </label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showAddConfirmPwd ? "text" : "password"}
+                    value={addUserData.confirmPassword}
+                    onChange={(e) => {
+                      setAddUserData({
+                        ...addUserData,
+                        confirmPassword: e.target.value,
+                      });
+                      setAddUserErrors({
+                        ...addUserErrors,
+                        confirmPassword: "",
+                      });
+                    }}
+                    placeholder="Re-enter password"
+                    style={{
+                      ...(addUserErrors.confirmPassword
+                        ? inputErrorStyle
+                        : inputStyle),
+                      paddingRight: 40,
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAddConfirmPwd(!showAddConfirmPwd)}
+                    style={{
+                      position: "absolute",
+                      right: 12,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 0,
+                      color: "#94a3b8",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    {showAddConfirmPwd ? <Icons.EyeOff /> : <Icons.Eye />}
+                  </button>
+                </div>
+                {addUserErrors.confirmPassword && (
+                  <p style={{ fontSize: 11, color: "#dc2626", marginTop: 4 }}>
+                    {addUserErrors.confirmPassword}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: 10,
+                padding: "14px 24px",
+                borderTop: "1px solid #f1f5f9",
+              }}
+            >
+              <button
+                onClick={handleAddUserClose}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#64748b",
+                  background: "#f1f5f9",
+                  border: "1px solid #e2e8f0",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddUserSave}
+                style={{
+                  padding: "8px 18px",
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#ffffff",
+                  background: "#0f172a",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                Save User
               </button>
             </div>
           </div>
