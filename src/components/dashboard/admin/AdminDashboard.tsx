@@ -341,7 +341,7 @@ function AdminDashboard() {
     return errors;
   };
 
-  const handleAddUserSave = async() => {
+  const handleAddUserSave = async () => {
     const errors = validateAddUser();
     if (Object.keys(errors).length > 0) {
       setAddUserErrors(errors);
@@ -352,8 +352,8 @@ function AdminDashboard() {
       email: addUserData.email,
       password: addUserData.password,
     };
-   const res=await createuser(payload)
-      
+    const res = await createuser(payload);
+
     console.log("New User Data:", res);
     setShowAddUser(false);
     setAddUserData(ADD_USER_DEFAULTS);
@@ -641,9 +641,10 @@ function AdminDashboard() {
                     { label: "User" },
                     { label: "User ID" },
                     { label: "Status" },
+                    { label: "Role" },
                     { label: "Original Password", icon: <Icons.Key /> },
                     { label: "Hashed Password", icon: <Icons.Hash /> },
-                    { label: "" },
+                    { label: "Action" },
                   ].map(({ label, icon }, i) => (
                     <th
                       key={i}
@@ -781,7 +782,20 @@ function AdminDashboard() {
                           {isActive ? "Active" : "Blocked"}
                         </span>
                       </td>
-
+                      <td>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold 
+    ${
+      user.role === "admin"
+        ? "bg-red-100 text-red-700"
+        : user.role === "coordinator"
+          ? "bg-yellow-100 text-yellow-700"
+          : "bg-green-100 text-green-700"
+    }`}
+                        >
+                          {user.role}
+                        </span>
+                      </td>
                       {/* Original Password */}
                       <td style={{ padding: "14px 18px" }}>
                         {user.original_password ? (
