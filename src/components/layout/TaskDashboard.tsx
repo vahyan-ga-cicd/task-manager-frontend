@@ -495,7 +495,7 @@ export default function TaskDashboard() {
               <div className="flex flex-col gap-4 mb-6">
                 <div>
                   <h2 className="text-base sm:text-xl font-bold text-gray-900">
-                    Task Deadlines 
+                    Task Deadlines
                   </h2>
                   <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
                     Tasks with deadlines from{" "}
@@ -900,10 +900,8 @@ export default function TaskDashboard() {
                 Task Inventory
               </h2>
               <div className="relative w-full sm:w-56">
-               
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
 
-                
                 <input
                   type="text"
                   placeholder="Search tasks..."
@@ -1019,7 +1017,14 @@ export default function TaskDashboard() {
                             </td>
                             <td className="px-6 py-5">
                               <span
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${cfg.classes}`}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
+    ${
+      task.priority === "High"
+        ? "bg-red-100 text-red-700"
+        : task.priority === "Medium"
+          ? "bg-yellow-100 text-yellow-700"
+          : "bg-green-100 text-green-700"
+    }`}
                               >
                                 {task.priority || "Normal"}
                               </span>
