@@ -484,7 +484,8 @@ export default function TaskDashboard() {
                         fontSize: "12px",
                         fontWeight: 600,
                       }}
-                      formatter={(val: number) => [val, "Tasks due"]}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      formatter={((val: any) => [val ?? 0, "Tasks due"]) as any}
                       cursor={{ stroke: "#e2e8f0", strokeWidth: 1 }}
                     />
 
@@ -501,10 +502,13 @@ export default function TaskDashboard() {
                       dataKey="count"
                       stroke="url(#lineGradient)"
                       strokeWidth={3}
-                      dot={(dotProps: { cx?: number; cy?: number; index?: number }) => (
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      dot={(dotProps: any) => (
                         <CustomDot
                           key={`dot-${dotProps.index}`}
-                          {...dotProps}
+                          cx={dotProps.cx}
+                          cy={dotProps.cy}
+                          index={dotProps.index}
                           dataLength={dataLen}
                         />
                       )}
@@ -515,15 +519,14 @@ export default function TaskDashboard() {
                       {/* Show count label only on last point */}
                       <LabelList
                         dataKey="count"
-                        content={(labelProps: {
-                          x?: number;
-                          y?: number;
-                          value?: number;
-                          index?: number;
-                        }) => (
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        content={(labelProps: any) => (
                           <CustomLabel
                             key={`label-${labelProps.index}`}
-                            {...labelProps}
+                            x={labelProps.x}
+                            y={labelProps.y}
+                            value={labelProps.value}
+                            index={labelProps.index}
                             dataLength={dataLen}
                           />
                         )}

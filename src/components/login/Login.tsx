@@ -50,10 +50,10 @@ export default function Login() {
       localStorage.setItem("token", res?.access_token);
       await fetchUser();
       router.replace("/");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login failed:", error);
       setIsSubmitting(false);
-      setError(error?.message || "Login failed. Please try again.");
+      setError((error as { message?: string }).message || "Login failed. Please try again.");
     }
   };
 
