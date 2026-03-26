@@ -36,41 +36,32 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <Image src="/H-LOGO.png" alt="Logo" width={50} height={50} />
+            
             <Link
               href="/"
-              className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600"
+              className="flex justify-center items-center gap-2 text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600"
             >
-              Vahyan TaskFlow
+            <Image src="/H-LOGO.png" alt="Logo" width={50} height={50} />  TaskFlow
             </Link>
           </div>
 
           {/* Desktop Menu - Hidden on Mobile */}
-          <div className="hidden md:flex items-center space-x-8">
-            {/* <Link href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</Link> */}
-            {authenticated && (
+          <div className="hidden md:flex items-center space-x-6">
+            {/* Assign Tasks (only for non-user roles) */}
+            {authenticated && userData?.data?.user_data?.role !== "user" && (
               <Link
                 href="/user"
-                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 
-      hover:text-white hover:bg-blue-600 
-      transition-all duration-200 shadow-sm hover:shadow-md"
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-white 
+  bg-gradient-to-r from-blue-600 to-indigo-600 
+  hover:from-blue-700 hover:to-indigo-700 
+  transition-all duration-300 shadow-md hover:shadow-xl 
+  transform hover:-translate-y-0.5"
               >
-                Account
+                Assign Tasks
               </Link>
             )}
 
-            {/* <Link
-              href="/ddocs/ddocs-frontend"
-              className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 
-    hover:text-white hover:bg-indigo-600 
-    transition-all duration-200 shadow-sm hover:shadow-md"
-            >
-              DDocs
-            </Link> */}
-          </div>
-
-          {/* Desktop Auth Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
+            {/* Auth Buttons */}
             {authenticated ? (
               <Link
                 href={
@@ -78,7 +69,11 @@ export default function Navbar() {
                     ? "/admin-dashboard/users"
                     : "/user"
                 }
-                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                className="px-5 py-2 rounded-xl text-sm font-semibold text-white 
+  bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 
+  hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700
+  transition-all duration-300 shadow-md hover:shadow-xl 
+  transform hover:-translate-y-0.5"
               >
                 {userData?.data?.user_data?.role === "admin"
                   ? "Admin Dashboard"
@@ -88,16 +83,10 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="text-gray-600 hover:text-blue-600 font-medium transition-colors"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                 >
                   Log in
                 </Link>
-                {/* <Link
-                  href="/signup"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                >
-                  Sign up
-                </Link> */}
               </>
             )}
           </div>
@@ -133,33 +122,40 @@ export default function Navbar() {
                 >
                   Features
                 </Link> */}
-                {authenticated && (
-                  <Link
-                    href="/user"
-                    className="block py-3 px-4 text-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all font-medium"
-                    onClick={closeMobileMenu}
-                  >
-                    Account
-                  </Link>
-                )}
-                <Link
-                  href="/ddocs/ddocs-frontend"
-                  className="block py-3 px-4 text-lg text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all font-medium"
-                  onClick={closeMobileMenu}
-                >
-                  DDocs
-                </Link>
+                {authenticated &&
+                  userData?.data?.user_data?.role !== "user" && (
+                    <Link
+                      href="/user"
+                      className="block w-full text-center px-4 py-2 rounded-xl text-sm font-semibold text-white 
+  bg-gradient-to-r from-blue-600 to-indigo-600 
+  hover:from-blue-700 hover:to-indigo-700 
+  transition-all duration-300 shadow-md hover:shadow-xl 
+  transform hover:-translate-y-0.5"
+                    >
+                      Assign Tasks
+                    </Link>
+                  )}
               </div>
 
               {/* Mobile Auth Buttons */}
               <div className="pt-4 border-t border-gray-100">
                 {authenticated ? (
                   <Link
-                    href="/user"
-                    className="block w-full text-center py-4 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-semibold text-lg"
+                    href={
+                      userData?.data?.user_data?.role === "admin"
+                        ? "/admin-dashboard/users"
+                        : "/user"
+                    }
+                    className="block w-full text-center px-5 py-2 rounded-xl text-sm font-semibold text-white 
+  bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 
+  hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700
+  transition-all duration-300 shadow-md hover:shadow-xl 
+  transform hover:-translate-y-0.5"
                     onClick={closeMobileMenu}
                   >
-                    Dashboard
+                    {userData?.data?.user_data?.role === "admin"
+                      ? "Admin Dashboard"
+                      : "Dashboard"}
                   </Link>
                 ) : (
                   <div className="space-y-3">
@@ -169,13 +165,6 @@ export default function Navbar() {
                       onClick={closeMobileMenu}
                     >
                       Log in
-                    </Link>
-                    <Link
-                      href="/signup"
-                      className="block w-full text-center py-3.5 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
-                      onClick={closeMobileMenu}
-                    >
-                      Sign up
                     </Link>
                   </div>
                 )}

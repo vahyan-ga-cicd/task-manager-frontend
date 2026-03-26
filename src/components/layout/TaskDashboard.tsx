@@ -15,6 +15,7 @@ import {
   ReferenceLine,
   LabelList,
 } from "recharts";
+import { Search } from "lucide-react";
 
 type Task = {
   task_id: string;
@@ -76,43 +77,41 @@ const TABS = [
   { key: "completed", label: "Completed" },
 ] as const;
 
-// ─── Custom dot: only blink on the LAST point ───────────────────────────────
+// ── All dots blink with staggered ripple ─────────────────────────────────────
 function CustomDot(props: {
   cx?: number;
   cy?: number;
   index?: number;
   dataLength: number;
-  count?: number;
 }) {
-  const { cx, cy, index, dataLength } = props;
+  const { cx, cy, index = 0 } = props;
   if (cx === undefined || cy === undefined) return null;
-
-  const isLast = index === dataLength - 1;
-
-  if (isLast) {
-    return (
-      <g>
-        {/* Pulsing ring */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={10}
-          fill="#2563eb"
-          fillOpacity={0.15}
-          style={{
-            animation: "ping 1.5s cubic-bezier(0,0,0.2,1) infinite",
-          }}
+  const beginDelay = `${index * 0.2}s`;
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={5} fill="#2563eb" fillOpacity={0.3}>
+        <animate
+          attributeName="r"
+          values="5;16;5"
+          dur="1.8s"
+          begin={beginDelay}
+          repeatCount="indefinite"
         />
-        <circle cx={cx} cy={cy} r={5} fill="#2563eb" />
-        <circle cx={cx} cy={cy} r={3} fill="#fff" />
-      </g>
-    );
-  }
-
-  return <circle cx={cx} cy={cy} r={3} fill="#93c5fd" />;
+        <animate
+          attributeName="fill-opacity"
+          values="0.4;0;0.4"
+          dur="1.8s"
+          begin={beginDelay}
+          repeatCount="indefinite"
+        />
+      </circle>
+      <circle cx={cx} cy={cy} r={5} fill="#2563eb" />
+      <circle cx={cx} cy={cy} r={2.5} fill="#fff" />
+    </g>
+  );
 }
 
-// ─── Custom label: show count only on last point ────────────────────────────
+// ── Label on last point only ──────────────────────────────────────────────────
 function CustomLabel(props: {
   x?: number;
   y?: number;
@@ -121,8 +120,8 @@ function CustomLabel(props: {
   dataLength: number;
 }) {
   const { x, y, value, index, dataLength } = props;
-  if (index !== dataLength - 1 || value === undefined || value === 0) return null;
-
+  if (index !== dataLength - 1 || value === undefined || value === 0)
+    return null;
   return (
     <g>
       <rect
@@ -143,7 +142,6 @@ function CustomLabel(props: {
       >
         {value}
       </text>
-      {/* small triangle */}
       <polygon
         points={`${x},${(y ?? 0) - 14} ${(x ?? 0) - 5},${(y ?? 0) - 18} ${(x ?? 0) + 5},${(y ?? 0) - 18}`}
         fill="#1e40af"
@@ -152,7 +150,88 @@ function CustomLabel(props: {
   );
 }
 
-// ─── Stat Card ───────────────────────────────────────────────────────────────
+// ── Rich custom tooltip: Assigned (blue) / Completed (green) / Due (red) ─────
+function CustomLineTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{
+    payload: { assigned: number; due: number; completed: number };
+  }>;
+  label?: string;
+}) {
+  if (!active || !payload || !payload.length) return null;
+  const d = payload[0].payload;
+
+  const rows = [
+    { label: "Assigned", value: d.assigned, color: "#2563eb" },
+    { label: "Completed", value: d.completed, color: "#10b981" },
+    { label: "Due", value: d.due, color: "#ef4444" },
+  ];
+
+  return (
+    <div
+      style={{
+        background: "#ffffff",
+        border: "1px solid #e2e8f0",
+        borderRadius: 14,
+        boxShadow: "0 12px 32px -4px rgba(0,0,0,0.13)",
+        padding: "12px 16px",
+        minWidth: 172,
+      }}
+    >
+      {/* Date header */}
+      <p
+        style={{
+          fontSize: 10,
+          fontWeight: 800,
+          color: "#111827",
+          marginBottom: 10,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </p>
+
+      {rows.map((row) => (
+        <div
+          key={row.label}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 7,
+            gap: 18,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: row.color,
+                display: "inline-block",
+                flexShrink: 0,
+              }}
+            />
+            <span style={{ fontSize: 11, fontWeight: 600, color: "#374151" }}>
+              {row.label}
+            </span>
+          </div>
+          <span style={{ fontSize: 14, fontWeight: 800, color: row.color }}>
+            {row.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Stat card wrapper ─────────────────────────────────────────────────────────
 function StatCard({
   label,
   value,
@@ -167,14 +246,14 @@ function StatCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md transition-all duration-300">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5 flex flex-col gap-3 hover:shadow-md transition-all duration-300">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
             {label}
           </p>
           <h3
-            className="text-2xl font-extrabold tracking-tight"
+            className="text-xl sm:text-2xl font-extrabold tracking-tight"
             style={{ color: accent || "#111827" }}
           >
             {value}
@@ -182,12 +261,12 @@ function StatCard({
           {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
         </div>
       </div>
-      <div className="h-36 w-full">{children}</div>
+      <div className="h-32 sm:h-36 w-full">{children}</div>
     </div>
   );
 }
 
-// ─── Mini stat badge ─────────────────────────────────────────────────────────
+// ── Mini badge ────────────────────────────────────────────────────────────────
 function MiniStat({
   label,
   value,
@@ -199,22 +278,23 @@ function MiniStat({
 }) {
   return (
     <div
-      className="flex flex-col items-center justify-center rounded-xl px-4 py-3 min-w-[90px]"
+      className="flex flex-col items-center justify-center rounded-xl px-3 py-2 sm:px-4 sm:py-3 min-w-[76px] sm:min-w-[90px]"
       style={{ background: color + "12", border: `1px solid ${color}30` }}
     >
-      <span
-        className="text-2xl font-black"
-        style={{ color }}
-      >
+      <span className="text-xl sm:text-2xl font-black" style={{ color }}>
         {value}
       </span>
-      <span className="text-[10px] font-bold uppercase tracking-wider mt-0.5" style={{ color }}>
+      <span
+        className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mt-0.5 text-center leading-tight"
+        style={{ color }}
+      >
         {label}
       </span>
     </div>
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 export default function TaskDashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -222,11 +302,6 @@ export default function TaskDashboard() {
     "all" | "completed" | "ongoing" | "pending"
   >("all");
   const [search, setSearch] = useState("");
-
-  // ── Fix: StrictMode double-mount causes ResizeObserver to fire before
-  // ── the DOM is painted → ResponsiveContainer gets width=0 and renders
-  // ── nothing in dev. Guard all charts behind this flag so they only
-  // ── mount after the container has a real size. Works identically in prod.
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -247,11 +322,9 @@ export default function TaskDashboard() {
   }, []);
 
   const stats = useMemo(() => {
-    // ── Use a fixed 10-day window: today-9 → today ──────────────────────────
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Status Counts
     const counts = tasks.reduce(
       (acc, t) => {
         const s = normalizeStatus(t.status);
@@ -279,41 +352,53 @@ export default function TaskDashboard() {
       },
     ];
 
-    // ── 10-day window ending TODAY (today-9 … today) ─────────────────────
-    // Each point = tasks whose deadline falls on that date
-  const last10DaysTasks: { date: string; rawDate: string; count: number; isToday: boolean }[] = [];
-let totalIn10Days = 0;
+    // Build 10-day window with per-day assigned / completed / due counts
+    const last10DaysTasks: {
+      date: string;
+      rawDate: string;
+      count: number;
+      assigned: number;
+      completed: number;
+      due: number;
+      isToday: boolean;
+    }[] = [];
 
-for (let i = 0; i < 10; i++) {  // 👈 forward instead of backward
-  const d = new Date(today);
-  d.setDate(today.getDate() + i); // 👈 future dates
+    let totalDueWindow = 0;
 
-  const dateStr = d.toLocaleDateString("en-CA"); // YYYY-MM-DD
+    for (let i = 0; i < 10; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const dateStr = d.toLocaleDateString("en-CA");
 
-  const count = tasks.filter((t) => {
-    if (!t.deadline) return false;
+      const tasksOnDate = tasks.filter((t) => {
+        if (!t.deadline) return false;
+        const td = new Date(t.deadline);
+        if (isNaN(td.getTime())) return false;
+        return td.toLocaleDateString("en-CA") === dateStr;
+      });
 
-    const td = new Date(t.deadline);
-    if (isNaN(td.getTime())) return false;
+      const assigned = tasksOnDate.length;
+      const completed = tasksOnDate.filter(
+        (t) => normalizeStatus(t.status) === "completed",
+      ).length;
+      const due = assigned - completed;
 
-    const taskDate = td.toLocaleDateString("en-CA");
+      last10DaysTasks.push({
+        date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        rawDate: dateStr,
+        count: assigned,
+        assigned,
+        completed,
+        due,
+        isToday: i === 0,
+      });
 
-    return taskDate === dateStr;
-  }).length;
+      totalDueWindow += due;
+    }
 
-  last10DaysTasks.push({
-    date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    rawDate: dateStr,
-    count,
-    isToday: i === 0,
-  });
+    const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
 
-  totalIn10Days += count;
-}
-
-// ── Y-axis domain: always show at least 0–5 so line is visible ─────────
-const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
-    // Top Assigners
+    // Top assigners
     const assignerMap: Record<string, { count: number; name: string }> = {};
     tasks.forEach((t) => {
       const email = t.assigned_by_email || t.assigned_by || "Unknown";
@@ -325,7 +410,7 @@ const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
-    // Top Completers
+    // Top completers
     const completerMap: Record<string, { count: number; name: string }> = {};
     tasks.forEach((t) => {
       if (normalizeStatus(t.status) === "completed") {
@@ -343,7 +428,7 @@ const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
       counts,
       statusData,
       last10DaysTasks,
-      totalIn10Days,
+      totalDueWindow,
       maxCount,
       topAssigners,
       topCompleters,
@@ -377,44 +462,42 @@ const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
 
   return (
     <>
-      {/* Keyframe for blinking dot — injected once */}
       <style>{`
-        @keyframes ping {
-          75%, 100% { transform: scale(2.2); opacity: 0; }
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
       <div className="min-h-screen bg-[#f7f8fa] font-sans pb-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6 sm:space-y-8">
           {/* ── Page Header ─────────────────────────────────────────────── */}
-          <div className="flex items-end justify-between mt-10">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mt-15 sm:mt-10">
             <div>
-              <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
                 Analytics Dashboard
               </h1>
               <p className="text-sm text-gray-500 mt-1 font-medium">
                 Real-time performance and task distribution
               </p>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">
+            <div className="sm:text-right flex sm:flex-col flex-row items-center sm:items-end gap-2 sm:gap-0">
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest sm:mb-1">
                 Total System Tasks
               </p>
-              <p className="text-4xl font-black text-gray-900">{tasks.length}</p>
+              <p className="text-3xl sm:text-4xl font-black text-gray-900">
+                {tasks.length}
+              </p>
             </div>
           </div>
 
-          {/* ── Hero: 10-day task deadline line chart ────────────────────── */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-visible">
-            <div className="p-8">
-              {/* Header row */}
-              <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+          {/* ── Hero: 10-day line chart ──────────────────────────────────── */}
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-xl overflow-visible">
+            <div className="p-4 sm:p-8">
+              <div className="flex flex-col gap-4 mb-6">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">
-                    Task Deadlines — Last 10 Days
+                  <h2 className="text-base sm:text-xl font-bold text-gray-900">
+                    Task Deadlines 
                   </h2>
-                  <p className="text-sm text-gray-400 mt-0.5">
+                  <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
                     Tasks with deadlines from{" "}
                     <span className="font-semibold text-gray-600">
                       {stats.last10DaysTasks[0]?.date}
@@ -426,12 +509,31 @@ const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
                   </p>
                 </div>
 
+                {/* Legend */}
+                <div className="flex items-center gap-4 flex-wrap">
+                  {[
+                    { label: "Assigned", color: "#2563eb" },
+                    { label: "Completed", color: "#10b981" },
+                    { label: "Due", color: "#ef4444" },
+                  ].map((l) => (
+                    <div key={l.label} className="flex items-center gap-1.5">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full inline-block"
+                        style={{ background: l.color }}
+                      />
+                      <span className="text-[11px] font-semibold text-gray-500">
+                        {l.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
                 {/* Summary badges */}
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 no-scrollbar">
                   <MiniStat
                     label="Due This Window"
-                    value={stats.totalIn10Days}
-                    color="#2563eb"
+                    value={stats.totalDueWindow}
+                    color="#ef4444"
                   />
                   <MiniStat
                     label="Completed"
@@ -441,185 +543,200 @@ const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
                   <MiniStat
                     label="Ongoing"
                     value={stats.counts.ongoing}
-                    color="#f59e0b"
+                    color="#2563eb"
                   />
                 </div>
               </div>
 
-              {/* Line chart — padded top so label has room */}
-              {/* minHeight prevents collapse before mount; mounted guard fixes StrictMode ResizeObserver timing */}
-              <div className="h-[300px] w-full" style={{ minHeight: 300, paddingTop: 8 }}>
-                {mounted && <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={stats.last10DaysTasks}
-                    margin={{ top: 40, right: 30, left: 0, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="#93c5fd" />
-                        <stop offset="100%" stopColor="#2563eb" />
-                      </linearGradient>
-                    </defs>
-
-                    {/* Always render grid so chart never looks empty */}
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                      stroke="#f1f5f9"
-                    />
-
-                    {/* Always show X axis — dates always present */}
-                    <XAxis
-                      dataKey="date"
-                      axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: "#94a3b8", fontWeight: 600 }}
-                      dy={10}
-                    />
-
-                    {/* Always show Y axis with minimum range 0–5 so it's visible even with no data */}
-                    <YAxis
-                      axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: "#94a3b8" }}
-                      domain={[0, stats.maxCount]}
-                      allowDecimals={false}
-                      width={28}
-                    />
-
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: "12px",
-                        border: "none",
-                        boxShadow: "0 10px 25px -5px rgba(0,0,0,0.12)",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                      }}
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      formatter={((val: any) => [val ?? 0, "Tasks due"]) as any}
-                      cursor={{ stroke: "#e2e8f0", strokeWidth: 1 }}
-                    />
-
-                    {/* Vertical reference line at today */}
-                    <ReferenceLine
-                      x={stats.last10DaysTasks[dataLen - 1]?.date}
-                      stroke="#2563eb"
-                      strokeDasharray="4 3"
-                      strokeOpacity={0.35}
-                    />
-
-                    <Line
-                      type="monotone"
-                      dataKey="count"
-                      stroke="url(#lineGradient)"
-                      strokeWidth={3}
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      dot={(dotProps: any) => (
-                        <CustomDot
-                          key={`dot-${dotProps.index}`}
-                          cx={dotProps.cx}
-                          cy={dotProps.cy}
-                          index={dotProps.index}
-                          dataLength={dataLen}
-                        />
-                      )}
-                      activeDot={{ r: 7, fill: "#1e40af" }}
-                      animationDuration={1200}
-                      isAnimationActive={true}
+              {/* Line chart */}
+              <div
+                className="h-[220px] sm:h-[300px] w-full"
+                style={{ minHeight: 220, paddingTop: 8 }}
+              >
+                {mounted && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={stats.last10DaysTasks}
+                      margin={{ top: 40, right: 16, left: 0, bottom: 0 }}
                     >
-                      {/* Show count label only on last point */}
-                      <LabelList
+                      <defs>
+                        <linearGradient
+                          id="lineGradient"
+                          x1="0"
+                          y1="0"
+                          x2="1"
+                          y2="0"
+                        >
+                          <stop offset="0%" stopColor="#93c5fd" />
+                          <stop offset="100%" stopColor="#2563eb" />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="#f1f5f9"
+                      />
+                      <XAxis
+                        dataKey="date"
+                        axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                        tickLine={false}
+                        tick={{ fontSize: 9, fill: "#94a3b8", fontWeight: 600 }}
+                        dy={10}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis
+                        axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                        tickLine={false}
+                        tick={{ fontSize: 9, fill: "#94a3b8" }}
+                        domain={[0, stats.maxCount]}
+                        allowDecimals={false}
+                        width={24}
+                      />
+
+                      {/* ✅ Rich tooltip: assigned / completed / due */}
+                      <Tooltip
+                        content={<CustomLineTooltip />}
+                        cursor={{
+                          stroke: "#cbd5e1",
+                          strokeWidth: 1,
+                          strokeDasharray: "4 2",
+                        }}
+                      />
+
+                      <ReferenceLine
+                        x={stats.last10DaysTasks[0]?.date}
+                        stroke="#2563eb"
+                        strokeDasharray="4 3"
+                        strokeOpacity={0.35}
+                      />
+
+                      <Line
+                        type="monotone"
                         dataKey="count"
+                        stroke="url(#lineGradient)"
+                        strokeWidth={3}
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        content={(labelProps: any) => (
-                          <CustomLabel
-                            key={`label-${labelProps.index}`}
-                            x={labelProps.x}
-                            y={labelProps.y}
-                            value={labelProps.value}
-                            index={labelProps.index}
+                        dot={(dotProps: any) => (
+                          <CustomDot
+                            key={`dot-${dotProps.index}`}
+                            cx={dotProps.cx}
+                            cy={dotProps.cy}
+                            index={dotProps.index}
                             dataLength={dataLen}
                           />
                         )}
-                      />
-                    </Line>
-                  </LineChart>
-                </ResponsiveContainer>}
+                        activeDot={{ r: 7, fill: "#1e40af" }}
+                        animationDuration={1200}
+                        isAnimationActive={true}
+                      >
+                        <LabelList
+                          dataKey="count"
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          content={(labelProps: any) => (
+                            <CustomLabel
+                              key={`label-${labelProps.index}`}
+                              x={labelProps.x}
+                              y={labelProps.y}
+                              value={labelProps.value}
+                              index={labelProps.index}
+                              dataLength={dataLen}
+                            />
+                          )}
+                        />
+                      </Line>
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
           </div>
 
           {/* ── Stats Row ───────────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {/* Status Overview */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <StatCard
               label="Status Overview"
-              value={stats.counts.ongoing + stats.counts.pending + stats.counts.completed}
+              value={
+                stats.counts.ongoing +
+                stats.counts.pending +
+                stats.counts.completed
+              }
               sub="Total tracked tasks"
               accent="#111827"
             >
-              {/* Status Overview — always render chart skeleton even with 0 data */}
-              <div style={{ minHeight: 144, height: "100%" }}>
-              {mounted && <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={stats.statusData}
-                  layout="vertical"
-                  margin={{ top: 4, right: 40, left: 0, bottom: 4 }}
-                  barCategoryGap="25%"
-                >
-                  {/* Always-visible grid */}
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    horizontal={false}
-                    stroke="#f1f5f9"
-                  />
-                  {/* X axis — always visible, minimum domain 0–1 so axis shows even with no data */}
-                  <XAxis
-                    type="number"
-                    axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fill: "#94a3b8" }}
-                    allowDecimals={false}
-                    domain={[0, (max: number) => Math.max(max, 1)]}
-                  />
-                  {/* Y axis — always visible */}
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fill: "#64748b", fontWeight: 600 }}
-                    width={68}
-                  />
-                  <Tooltip
-                    cursor={{ fill: "#f8fafc" }}
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border: "none",
-                      boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={18} minPointSize={3}>
-                    <LabelList
-                      dataKey="value"
-                      position="right"
-                      style={{ fontSize: "10px", fontWeight: 700, fill: "#374151" }}
-                    />
-                    {stats.statusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>}
+              <div style={{ minHeight: 128, height: "100%" }}>
+                {mounted && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={stats.statusData}
+                      layout="vertical"
+                      margin={{ top: 4, right: 36, left: 0, bottom: 4 }}
+                      barCategoryGap="25%"
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        horizontal={false}
+                        stroke="#f1f5f9"
+                      />
+                      <XAxis
+                        type="number"
+                        axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                        tickLine={false}
+                        tick={{ fontSize: 9, fill: "#94a3b8" }}
+                        allowDecimals={false}
+                        domain={[0, (max: number) => Math.max(max, 1)]}
+                      />
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                        tickLine={false}
+                        tick={{
+                          fontSize: 10,
+                          fill: "#64748b",
+                          fontWeight: 600,
+                        }}
+                        width={64}
+                      />
+                      <Tooltip
+                        cursor={{ fill: "#f8fafc" }}
+                        contentStyle={{
+                          borderRadius: "8px",
+                          border: "none",
+                          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+                          fontSize: "12px",
+                          color: "#000",
+                        }}
+                      />
+                      <Bar
+                        dataKey="value"
+                        radius={[0, 6, 6, 0]}
+                        barSize={16}
+                        minPointSize={3}
+                      >
+                        <LabelList
+                          dataKey="value"
+                          position="right"
+                          style={{
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            fill: "#374151",
+                          }}
+                        />
+                        {stats.statusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </StatCard>
 
-            {/* Top Assigners */}
             <StatCard
               label="Top Assigners"
-              value={stats.topAssigners.length > 0 ? stats.topAssigners[0].name : "—"}
+              value={
+                stats.topAssigners.length > 0 ? stats.topAssigners[0].name : "—"
+              }
               sub={
                 stats.topAssigners.length > 0
                   ? `${stats.topAssigners[0].count} tasks assigned`
@@ -627,63 +744,79 @@ const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
               }
               accent="#4f46e5"
             >
-              {/* Top Assigners — always render chart skeleton even with no data */}
-              <div style={{ minHeight: 144, height: "100%" }}>
-              {mounted && <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={stats.topAssigners.length > 0 ? stats.topAssigners : [{ name: "—", count: 0 }]}
-                  layout="vertical"
-                  margin={{ top: 4, right: 40, left: 0, bottom: 4 }}
-                  barCategoryGap="20%"
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    horizontal={false}
-                    stroke="#f1f5f9"
-                  />
-                  {/* X axis — always visible */}
-                  <XAxis
-                    type="number"
-                    axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fill: "#94a3b8" }}
-                    allowDecimals={false}
-                    domain={[0, (max: number) => Math.max(max, 1)]}
-                  />
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
-                    tickLine={false}
-                    tick={{ fontSize: 9, fill: "#64748b", fontWeight: 600 }}
-                    width={80}
-                  />
-                  <Tooltip
-                    cursor={{ fill: "#f8fafc" }}
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border: "none",
-                      boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Bar dataKey="count" fill="#818cf8" radius={[0, 4, 4, 0]} barSize={14} minPointSize={3}>
-                    <LabelList
-                      dataKey="count"
-                      position="right"
-                      style={{ fontSize: "10px", fontWeight: 700, fill: "#4f46e5" }}
-                    />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>}
+              <div style={{ minHeight: 128, height: "100%" }}>
+                {mounted && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={
+                        stats.topAssigners.length > 0
+                          ? stats.topAssigners
+                          : [{ name: "—", count: 0 }]
+                      }
+                      layout="vertical"
+                      margin={{ top: 4, right: 36, left: 0, bottom: 4 }}
+                      barCategoryGap="20%"
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        horizontal={false}
+                        stroke="#f1f5f9"
+                      />
+                      <XAxis
+                        type="number"
+                        axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                        tickLine={false}
+                        tick={{ fontSize: 9, fill: "#94a3b8" }}
+                        allowDecimals={false}
+                        domain={[0, (max: number) => Math.max(max, 1)]}
+                      />
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                        tickLine={false}
+                        tick={{ fontSize: 9, fill: "#64748b", fontWeight: 600 }}
+                        width={76}
+                      />
+                      <Tooltip
+                        cursor={{ fill: "#f8fafc" }}
+                        contentStyle={{
+                          borderRadius: "8px",
+                          border: "none",
+                          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+                          fontSize: "12px",
+                          color: "#000",
+                        }}
+                      />
+                      <Bar
+                        dataKey="count"
+                        fill="#818cf8"
+                        radius={[0, 4, 4, 0]}
+                        barSize={14}
+                        minPointSize={3}
+                      >
+                        <LabelList
+                          dataKey="count"
+                          position="right"
+                          style={{
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            fill: "#4f46e5",
+                          }}
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </StatCard>
 
-            {/* Top Completers */}
             <StatCard
               label="Top Completers"
               value={
-                stats.topCompleters.length > 0 ? stats.topCompleters[0].name : "—"
+                stats.topCompleters.length > 0
+                  ? stats.topCompleters[0].name
+                  : "—"
               }
               sub={
                 stats.topCompleters.length > 0
@@ -692,78 +825,101 @@ const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
               }
               accent="#059669"
             >
-              {/* Top Completers — always render chart skeleton even with no data */}
-              <div style={{ minHeight: 144, height: "100%" }}>
-              {mounted && <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={stats.topCompleters.length > 0 ? stats.topCompleters : [{ name: "—", count: 0 }]}
-                  layout="vertical"
-                  margin={{ top: 4, right: 40, left: 0, bottom: 4 }}
-                  barCategoryGap="20%"
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    horizontal={false}
-                    stroke="#f1f5f9"
-                  />
-                  {/* X axis — always visible */}
-                  <XAxis
-                    type="number"
-                    axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fill: "#94a3b8" }}
-                    allowDecimals={false}
-                    domain={[0, (max: number) => Math.max(max, 1)]}
-                  />
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
-                    tickLine={false}
-                    tick={{ fontSize: 9, fill: "#64748b", fontWeight: 600 }}
-                    width={80}
-                  />
-                  <Tooltip
-                    cursor={{ fill: "#f8fafc" }}
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border: "none",
-                      boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Bar dataKey="count" fill="#34d399" radius={[0, 4, 4, 0]} barSize={14} minPointSize={3}>
-                    <LabelList
-                      dataKey="count"
-                      position="right"
-                      style={{ fontSize: "10px", fontWeight: 700, fill: "#059669" }}
-                    />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>}
+              <div style={{ minHeight: 128, height: "100%" }}>
+                {mounted && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={
+                        stats.topCompleters.length > 0
+                          ? stats.topCompleters
+                          : [{ name: "—", count: 0 }]
+                      }
+                      layout="vertical"
+                      margin={{ top: 4, right: 36, left: 0, bottom: 4 }}
+                      barCategoryGap="20%"
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        horizontal={false}
+                        stroke="#f1f5f9"
+                      />
+                      <XAxis
+                        type="number"
+                        axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                        tickLine={false}
+                        tick={{ fontSize: 9, fill: "#94a3b8" }}
+                        allowDecimals={false}
+                        domain={[0, (max: number) => Math.max(max, 1)]}
+                      />
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        axisLine={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                        tickLine={false}
+                        tick={{ fontSize: 9, fill: "#64748b", fontWeight: 600 }}
+                        width={76}
+                      />
+                      <Tooltip
+                        cursor={{ fill: "#f8fafc" }}
+                        contentStyle={{
+                          borderRadius: "8px",
+                          border: "none",
+                          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)",
+                          fontSize: "12px",
+                          color: "#000",
+                        }}
+                      />
+                      <Bar
+                        dataKey="count"
+                        fill="#34d399"
+                        radius={[0, 4, 4, 0]}
+                        barSize={14}
+                        minPointSize={3}
+                      >
+                        <LabelList
+                          dataKey="count"
+                          position="right"
+                          style={{
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            fill: "#059669",
+                          }}
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </StatCard>
           </div>
 
-          {/* ── Task Inventory Table ─────────────────────────────────────── */}
-          <div className="space-y-4 pt-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Task Inventory</h2>
-              <div className="relative">
+          {/* ── Task Inventory ───────────────────────────────────────────── */}
+          <div className="space-y-4 pt-2 sm:pt-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                Task Inventory
+              </h2>
+              <div className="relative w-full sm:w-56">
+               
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+
+                
                 <input
                   type="text"
-                  placeholder="Filter tasks…"
+                  placeholder="Search tasks..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-4 pr-4 py-2 text-xs rounded-xl border border-gray-200 bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-100 w-48 transition-all duration-150"
+                  className="w-full pl-9 pr-4 py-2 text-sm rounded-xl 
+    border border-gray-200 bg-white text-gray-800 placeholder-gray-400 
+    focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 
+    transition-all duration-200 shadow-sm hover:shadow-md"
                 />
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-              {/* Tabs */}
-              <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 justify-between bg-white">
-                <div className="flex gap-2 flex-wrap">
+            <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-white">
+                <div className="flex overflow-x-auto pb-0.5 -mx-1 px-1 no-scrollbar">
                   {TABS.map((tab) => {
                     const count =
                       tab.key === "all"
@@ -778,12 +934,12 @@ const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
                       <button
                         key={tab.key}
                         onClick={() => setFilter(tab.key as typeof filter)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-2
+                        className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0
                           ${active ? "bg-gray-900 text-white shadow-lg shadow-gray-200" : "text-gray-500 hover:bg-gray-50"}`}
                       >
                         {tab.label}
                         <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full ${active ? "bg-white/20" : "bg-gray-100"}`}
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full ${active ? "bg-white/20" : "bg-gray-100"}`}
                         >
                           {count}
                         </span>
@@ -793,12 +949,12 @@ const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
                 </div>
               </div>
 
-              {/* Table */}
+              {/* Table — always a table, scrolls horizontally on mobile */}
               <div
                 className="overflow-x-auto overflow-y-auto"
                 style={{ maxHeight: "600px" }}
               >
-                <table className="w-full text-sm border-collapse">
+                <table className="min-w-max w-full text-sm border-collapse">
                   <thead className="sticky top-0 z-10 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
                     <tr>
                       {[
@@ -836,7 +992,7 @@ const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
                         return (
                           <tr
                             key={task.task_id}
-                            className="hover:bg-blue-50/20 transition-colors group"
+                            className="hover:bg-blue-50/20 transition-colors"
                           >
                             <td className="px-6 py-5 text-xs font-mono text-gray-300">
                               {String(i + 1).padStart(2, "0")}
@@ -868,7 +1024,6 @@ const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
                                 {task.priority || "Normal"}
                               </span>
                             </td>
-
                             <td className="px-6 py-5">
                               <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500 uppercase">
@@ -884,7 +1039,6 @@ const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
                                 </div>
                               </div>
                             </td>
-
                             <td className="px-6 py-5">
                               <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-[10px] font-bold text-blue-500 uppercase">
@@ -900,7 +1054,6 @@ const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
                                 </div>
                               </div>
                             </td>
-
                             <td className="px-6 py-5 text-xs text-gray-600 font-medium whitespace-nowrap">
                               {task.deadline || "—"}
                             </td>
