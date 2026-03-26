@@ -3,6 +3,7 @@ import { useAuthContext } from "@/context/AuthContext";
 import Link from "next/link";
 import { useState } from "react";
 import { Code, Menu, X } from "lucide-react"; // npm install lucide-react
+import Image from "next/image";
 
 export default function Navbar() {
   const { userData, authenticated } = useAuthContext();
@@ -35,11 +36,12 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
+            <Image src="/H-LOGO.png" alt="Logo" width={50} height={50} />
             <Link
               href="/"
               className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600"
             >
-              TaskMaster
+              Vahyan TaskFlow
             </Link>
           </div>
 
@@ -57,14 +59,14 @@ export default function Navbar() {
               </Link>
             )}
 
-            <Link
+            {/* <Link
               href="/ddocs/ddocs-frontend"
               className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 
     hover:text-white hover:bg-indigo-600 
     transition-all duration-200 shadow-sm hover:shadow-md"
             >
               DDocs
-            </Link>
+            </Link> */}
           </div>
 
           {/* Desktop Auth Buttons */}
@@ -90,12 +92,12 @@ export default function Navbar() {
                 >
                   Log in
                 </Link>
-                <Link
+                {/* <Link
                   href="/signup"
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                 >
                   Sign up
-                </Link>
+                </Link> */}
               </>
             )}
           </div>
