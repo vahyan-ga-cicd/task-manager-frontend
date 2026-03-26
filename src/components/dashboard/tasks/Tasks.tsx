@@ -116,13 +116,13 @@ function StyledSelect<T extends string>({
   return (
     <div className="relative">
       <select
-  value={value}
-  onChange={(e) => onChange(e.target.value as T)}
-  style={{ backgroundColor: "inherit" }}
-  className={`appearance-none pl-3 pr-7 py-1.5 rounded-lg border text-xs font-semibold outline-none cursor-pointer transition-all focus:ring-2 focus:ring-indigo-300
+        value={value}
+        onChange={(e) => onChange(e.target.value as T)}
+        style={{ backgroundColor: "inherit" }}
+        className={`appearance-none pl-3 pr-7 py-1.5 rounded-lg border text-xs font-semibold outline-none cursor-pointer transition-all focus:ring-2 focus:ring-indigo-300
 ${colorMap[value] || "bg-gray-50 text-gray-700 border-gray-200"}
 bg-opacity-100 text-black`}
->
+      >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
@@ -222,11 +222,11 @@ export default function Tasks() {
     }
   };
 
-const statusColorMap: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800 border-amber-300",
-  ongoing: "bg-blue-100 text-blue-800 border-blue-300",   // ✅ FIX
-  complete: "bg-green-100 text-green-800 border-green-300",
-};
+  const statusColorMap: Record<string, string> = {
+    pending: "bg-amber-100 text-amber-800 border-amber-300",
+    ongoing: "bg-blue-100 text-blue-800 border-blue-300", // ✅ FIX
+    complete: "bg-green-100 text-green-800 border-green-300",
+  };
   const priorityColorMap: Record<string, string> = {
     Normal: "bg-slate-50  text-slate-600  border-slate-200",
     Medium: "bg-orange-50 text-orange-600 border-orange-200",
@@ -428,8 +428,8 @@ const statusColorMap: Record<string, string> = {
                               Status
                             </span>
 
-                            {isAdmin ? (
-                              // 👇 Admin → only view
+                            {isAdmin || task.status === "complete" ? (
+                              // 👇 Admin OR Completed → only view (no edit)
                               <span
                                 className={`px-2 py-[2px] rounded text-[10px] font-bold uppercase text-black ${
                                   task.status === "pending"
@@ -444,7 +444,7 @@ const statusColorMap: Record<string, string> = {
                                 {task.status}
                               </span>
                             ) : (
-                              // 👇 User → dropdown
+                              // 👇 Only non-completed users can edit
                               <StyledSelect
                                 value={task.status}
                                 onChange={(v) =>

@@ -281,27 +281,38 @@ export default function TaskDashboard() {
 
     // ── 10-day window ending TODAY (today-9 … today) ─────────────────────
     // Each point = tasks whose deadline falls on that date
-    const last10DaysTasks: { date: string; rawDate: string; count: number; isToday: boolean }[] = [];
-    let totalIn10Days = 0;
+  const last10DaysTasks: { date: string; rawDate: string; count: number; isToday: boolean }[] = [];
+let totalIn10Days = 0;
 
-    for (let i = 9; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const dateStr = d.toISOString().split("T")[0]; // "YYYY-MM-DD"
+for (let i = 0; i < 10; i++) {  // 👈 forward instead of backward
+  const d = new Date(today);
+  d.setDate(today.getDate() + i); // 👈 future dates
 
-      const count = tasks.filter((t) => t.deadline === dateStr).length;
-      last10DaysTasks.push({
-        date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        rawDate: dateStr,
-        count,
-        isToday: i === 0,
-      });
-      totalIn10Days += count;
-    }
+  const dateStr = d.toLocaleDateString("en-CA"); // YYYY-MM-DD
 
-    // ── Y-axis domain: always show at least 0–5 so line is visible ─────────
-    const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
+  const count = tasks.filter((t) => {
+    if (!t.deadline) return false;
 
+    const td = new Date(t.deadline);
+    if (isNaN(td.getTime())) return false;
+
+    const taskDate = td.toLocaleDateString("en-CA");
+
+    return taskDate === dateStr;
+  }).length;
+
+  last10DaysTasks.push({
+    date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    rawDate: dateStr,
+    count,
+    isToday: i === 0,
+  });
+
+  totalIn10Days += count;
+}
+
+// ── Y-axis domain: always show at least 0–5 so line is visible ─────────
+const maxCount = Math.max(...last10DaysTasks.map((d) => d.count), 5);
     // Top Assigners
     const assignerMap: Record<string, { count: number; name: string }> = {};
     tasks.forEach((t) => {
@@ -377,7 +388,7 @@ export default function TaskDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
 
           {/* ── Page Header ─────────────────────────────────────────────── */}
-          <div className="flex items-end justify-between">
+          <div className="flex items-end justify-between mt-10">
             <div>
               <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
                 Analytics Dashboard
