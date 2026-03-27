@@ -34,9 +34,8 @@ export default function AddTaskModal({
   const isAdmin = userData?.data?.user_data?.role === "admin";
   const isCoordinator = userData?.data?.user_data?.role === "coordinator";
   const currentUserId = userData?.data?.user_data?.user_id;
-  
-  const isAssigningPossible = isAdmin || isCoordinator;
 
+  const isAssigningPossible = isAdmin || isCoordinator;
 
   useEffect(() => {
     if (isOpen && isAssigningPossible) {
@@ -54,34 +53,40 @@ export default function AddTaskModal({
   }, [isOpen, isAssigningPossible]);
 
   if (!isOpen) return null;
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!newTaskTitle.trim()) return;
+    e.preventDefault();
+    if (!newTaskTitle.trim()) return;
 
-  setIsSubmitting(true);
+    setIsSubmitting(true);
 
-  try {
-    const taskData = isAssigningPossible 
-      ? { title: newTaskTitle, description: newTaskDescription, assigned_to: assignedTo, deadline, priority }
-      : { title: newTaskTitle, description: newTaskDescription, priority };
+    try {
+      const taskData = isAssigningPossible
+        ? {
+            title: newTaskTitle,
+            description: newTaskDescription,
+            assigned_to: assignedTo,
+            deadline,
+            priority,
+          }
+        : { title: newTaskTitle, description: newTaskDescription, priority };
 
-    await onAddTask(taskData);
+      await onAddTask(taskData);
 
-    await fetchUser();
+      await fetchUser();
 
-    setNewTaskTitle('');
-    setNewTaskDescription('');
-    setPriority('Low');
-    setAssignedTo('');
-    setDeadline('');
-    onClose();
-  } catch (err) {
-    console.log(err);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      setNewTaskTitle("");
+      setNewTaskDescription("");
+      setPriority("Low");
+      setAssignedTo("");
+      setDeadline("");
+      onClose();
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -151,18 +156,32 @@ export default function AddTaskModal({
               </label>
               <div className="flex gap-3">
                 {[
-                  { id: 'Low', color: 'bg-blue-50 text-blue-600 border-blue-200 ring-blue-500', label: 'Low' },
-                  { id: 'Medium', color: 'bg-amber-50 text-amber-600 border-amber-200 ring-amber-500', label: 'Medium' },
-                  { id: 'High', color: 'bg-red-50 text-black border-red-200 ring-red-500', label: 'High' }
+                  {
+                    id: "Low",
+                    color:
+                      "bg-blue-50 text-blue-600 border-blue-200 ring-blue-500",
+                    label: "Low",
+                  },
+                  {
+                    id: "Medium",
+                    color:
+                      "bg-amber-50 text-amber-600 border-amber-200 ring-amber-500",
+                    label: "Medium",
+                  },
+                  {
+                    id: "High",
+                    color: "bg-red-50 text-black border-red-200 ring-red-500",
+                    label: "High",
+                  },
                 ].map((p) => (
                   <button
                     key={p.id}
                     type="button"
                     onClick={() => setPriority(p.id as Priority)}
                     className={`flex-1 py-2 px-3 rounded-lg border text-xs font-bold transition-all ${
-                      priority === p.id 
-                        ? `${p.color} border-2 ring-2 ring-offset-1` 
-                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                      priority === p.id
+                        ? `${p.color} border-2 ring-2 ring-offset-1`
+                        : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
                     }`}
                   >
                     {p.label}
@@ -187,23 +206,62 @@ export default function AddTaskModal({
                     {usersList
                       .filter((user) => user.user_id !== currentUserId)
                       .map((user) => (
-                      <option key={user.user_id} value={user.user_id}>
-                        {user.username} ({user.email})
-                      </option>
-                    ))}
+                        <option key={user.user_id} value={user.user_id}>
+                          {user.username} ({user.email})
+                        </option>
+                      ))}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                     Deadline <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="date"
-                    value={deadline}
-                    onChange={(e) => setDeadline(e.target.value)}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-gray-900"
-                  />
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={deadline}
+                      onChange={(e) => setDeadline(e.target.value)}
+                      min={new Date().toISOString().split("T")[0]}
+                      required
+                      className="w-full px-4 py-2.5 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-gray-900 bg-white cursor-pointer
+        [&::-webkit-calendar-picker-indicator]:opacity-0
+        [&::-webkit-calendar-picker-indicator]:absolute
+        [&::-webkit-calendar-picker-indicator]:inset-0
+        [&::-webkit-calendar-picker-indicator]:w-full
+        [&::-webkit-calendar-picker-indicator]:h-full
+        [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none flex items-center gap-1.5">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 text-indigo-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  {deadline && (
+                    <p className="mt-1.5 text-xs text-indigo-600 font-medium flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 inline-block" />
+                      {new Date(deadline + "T00:00:00").toLocaleDateString(
+                        "en-GB",
+                        {
+                          weekday: "short",
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        },
+                      )}
+                    </p>
+                  )}
                 </div>
               </>
             )}

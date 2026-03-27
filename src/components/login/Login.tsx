@@ -53,7 +53,8 @@ export default function Login() {
     } catch (error: unknown) {
       console.error("Login failed:", error);
       setIsSubmitting(false);
-      setError((error as { message?: string }).message || "Login failed. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "Login failed. Please try again.";
+      setError(errorMessage);
     }
   };
 

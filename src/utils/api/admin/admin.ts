@@ -1,7 +1,5 @@
-
 import { IUser } from "@/@types/interface/admin.interfaces";
 import axios from "axios";
-import { axiosClient } from "@/config/axios";
 import { ITask } from "@/@types/interface/tasks.interfaces";
 
 export interface ApiResponse<T = unknown> {
@@ -16,7 +14,7 @@ export const getallusers = async (): Promise<IUser[]> => {
     if (!token) {
       throw new Error("No token found");
     }
-    const res = await axiosClient.get("/admin/users", {
+    const res = await axios.get("/api/admin/showallusers", {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -28,13 +26,15 @@ export const getallusers = async (): Promise<IUser[]> => {
   }
 };
 
+
+
 export const updateuser = async (user_id: string, payload: Partial<IUser>): Promise<ApiResponse<IUser>> => {
   try {
     const token = localStorage.getItem("token");
     if (!token) {
       throw new Error("No token found");
     }
-    const res = await axiosClient.put(`/admin/editUser/${user_id}`, payload, {
+    const res = await axios.put(`/api/admin/editUser/${user_id}`, payload, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -48,11 +48,13 @@ export const updateuser = async (user_id: string, payload: Partial<IUser>): Prom
   }
 };
 
+
+
   export const fetchadminmytasks = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("No token found");
-      const res = await axiosClient.get("/admin/my-tasks", {
+      const res = await axios.get("/api/admin/mytasks", {
         headers: { Authorization: `Bearer ${token}` }
       });
       return res.data;
@@ -62,11 +64,13 @@ export const updateuser = async (user_id: string, payload: Partial<IUser>): Prom
     }
   };
 
+
+
   export const fetchAdminStats = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("No token found");
-      const res = await axiosClient.get("/admin/stats", {
+      const res = await axios.get("/api/admin/stats", {
         headers: { Authorization: `Bearer ${token}` }
       });
       return res.data;
@@ -76,25 +80,29 @@ export const updateuser = async (user_id: string, payload: Partial<IUser>): Prom
     }
   };
 
-export const fetchadminalltasks = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token found");
-      const res = await axiosClient.get("/admin/all-tasks", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return res.data;
-    } catch (error) {
-      console.error(error);
-      throw new Error("Failed to fetch all tasks");
-    }
-  };
+
+
+// export const fetchadminalltasks = async () => {
+//     try {
+//       const token = localStorage.getItem("token");
+//       if (!token) throw new Error("No token found");
+//       const res = await axios.get("/api/admin/alltasks", {
+//         headers: { Authorization: `Bearer ${token}` }
+//       });
+//       return res.data;
+//     } catch (error) {
+//       console.error(error);
+//       throw new Error("Failed to fetch all tasks");
+//     }
+//   };
   
-  export const getuserslist = async () => {
+
+
+export const getuserslist = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("No token found");
-      const res = await axiosClient.get("/admin/users-list", {
+      const res = await axios.get("/api/admin/users-list", {
         headers: { Authorization: `Bearer ${token}` }
       });
       return res.data;
@@ -102,9 +110,11 @@ export const fetchadminalltasks = async () => {
       console.error(error);
       throw new Error("Failed to fetch users list");
     }
-  };
+};
   
-  export const assigntask = async (payload: {
+
+
+export const assigntask = async (payload: {
   title: string;
   description?: string;
   assigned_to?: string;
@@ -114,7 +124,7 @@ export const fetchadminalltasks = async () => {
   try {
     const token = localStorage.getItem("token");
     if (!token) throw new Error("No token found");
-    const res = await axiosClient.post("/admin/assign-task", payload, {
+    const res = await axios.post("/api/admin/assigntask", payload, {
       headers: { Authorization: `Bearer ${token}` }
     });
     return res.data;
@@ -126,7 +136,9 @@ export const fetchadminalltasks = async () => {
   }
 };
 
-  export const adminUpdateTask = async (
+
+
+export const adminUpdateTask = async (
   target_user_id: string,
   task_id: string,
   payload: unknown
@@ -134,7 +146,7 @@ export const fetchadminalltasks = async () => {
   try {
     const token = localStorage.getItem("token");
     if (!token) throw new Error("No token found");
-    const res = await axiosClient.put(`/admin/update-task/${target_user_id}/${task_id}`, payload, {
+    const res = await axios.put(`/api/admin/updatetask/${target_user_id}/${task_id}`, payload, {
       headers: { Authorization: `Bearer ${token}` }
     });
     return res.data;
@@ -146,13 +158,15 @@ export const fetchadminalltasks = async () => {
   }
 };
 
+
+
 export const createuser = async (payload: Partial<IUser>): Promise<ApiResponse<IUser>> => {
   try {
     const token = localStorage.getItem("token");
     if (!token) {
       throw new Error("No token found");
     }
-    const res = await axiosClient.post(`/admin/createuser`, payload, {
+    const res = await axios.post(`/api/admin/createuser`, payload, {
       headers: {
         Authorization: `Bearer ${token}`
       }

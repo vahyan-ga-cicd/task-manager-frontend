@@ -22,12 +22,13 @@ import { ITaskResponse } from "@/@types/interface/decentralized.interface";
 
 function normalizeStatus(
   status?: string,
-): "completed" | "ongoing" | "pending" | "unknown" {
+): "completed" | "ongoing" | "pending" | "on-hold" | "unknown" {
   if (!status) return "unknown";
   const s = status.toLowerCase().trim();
   if (s === "completed" || s === "complete") return "completed";
   if (s === "ongoing") return "ongoing";
   if (s === "pending") return "pending";
+  if (s === "on-hold") return "on-hold";
   return "unknown";
 }
 
@@ -50,6 +51,12 @@ const STATUS_CONFIG = {
     dot: "bg-amber-400",
     color: "#f59e0b",
   },
+  "on-hold": {
+    label: "On-hold",
+    classes: "bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200",
+    dot: "bg-yellow-400",
+    color: "#f59e0b",
+  },
   unknown: {
     label: "—",
     classes: "bg-gray-50 text-gray-400 ring-1 ring-gray-200",
@@ -63,6 +70,7 @@ const TABS = [
   { key: "ongoing", label: "Ongoing" },
   { key: "pending", label: "Pending" },
   { key: "completed", label: "Completed" },
+  { key: "on-hold", label: "On-hold" },
 ] as const;
 
 function CustomDot(props: {
@@ -203,7 +211,7 @@ const sharedTooltipStyle = {
 export default function TaskDashboard() {
   const [tasks, setTasks] = useState<ITaskResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "completed" | "ongoing" | "pending">("all");
+  const [filter, setFilter] = useState<"all" | "completed" | "ongoing" | "pending" | "on-hold">("all");
   const [deptFilter, setDeptFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [mounted, setMounted] = useState(false);
@@ -242,13 +250,14 @@ export default function TaskDashboard() {
         if (s !== "unknown") acc[s] = (acc[s] || 0) + 1;
         return acc;
       },
-      { completed: 0, ongoing: 0, pending: 0 } as Record<string, number>,
+      { completed: 0, ongoing: 0, pending: 0, "on-hold": 0 } as Record<string, number>,
     );
 
     const statusData = [
       { name: "Ongoing", value: counts.ongoing, color: STATUS_CONFIG.ongoing.color },
       { name: "Pending", value: counts.pending, color: STATUS_CONFIG.pending.color },
       { name: "Completed", value: counts.completed, color: STATUS_CONFIG.completed.color },
+      { name: "On-hold", value: counts["on-hold"], color: STATUS_CONFIG["on-hold"].color },
     ];
 
     // Build 10-day window centered around today
@@ -315,6 +324,16 @@ export default function TaskDashboard() {
     });
     const topAssigners = Object.values(assignerMap).sort((a, b) => b.count - a.count).slice(0, 5);
 
+    const getTopNames = (list: { name: string; count: number }[]) => {
+      if (list.length === 0) return "—";
+      const max = list[0].count;
+      const topList = list.filter(item => item.count === max);
+      if (topList.length <= 2) return topList.map(t => t.name).join(", ");
+      return `${topList[0].name}, ${topList[1].name} +${topList.length - 2} others`;
+    };
+
+    const topAssignerNames = getTopNames(topAssigners);
+
     // Top completers
     const completerMap: Record<string, { count: number; name: string }> = {};
     tasks.forEach((t) => {
@@ -326,8 +345,9 @@ export default function TaskDashboard() {
       }
     });
     const topCompleters = Object.values(completerMap).sort((a, b) => b.count - a.count).slice(0, 5);
+    const topCompleterNames = getTopNames(topCompleters);
 
-    return { counts, statusData, last10DaysTasks, totalDueWindow, maxCount, topAssigners, topCompleters };
+    return { counts, statusData, last10DaysTasks, totalDueWindow, maxCount, topAssigners, topCompleters, topAssignerNames, topCompleterNames };
   }, [tasks]);
 
 
@@ -372,7 +392,7 @@ export default function TaskDashboard() {
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6 sm:space-y-8">
 
           {/* ── Page Header ─────────────────────────────────────────────── */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mt-15 sm:mt-10">
+          {/* <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mt-15 sm:mt-10">
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Analytics Dashboard</h1>
               <p className="text-sm text-gray-500 mt-1 font-medium">Real-time performance and task distribution</p>
@@ -381,10 +401,10 @@ export default function TaskDashboard() {
               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest sm:mb-1">Total System Tasks</p>
               <p className="text-3xl sm:text-4xl font-black text-gray-900">{tasks.length}</p>
             </div>
-          </div>
+          </div> */}
 
           {/* ── Hero: 10-day line chart ──────────────────────────────────── */}
-          <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-xl overflow-visible">
+          <div className="bg-white rounded-2xl mt-15 sm:rounded-3xl border border-gray-100 shadow-xl overflow-visible">
             <div className="p-4 sm:p-8">
               <div className="flex flex-col gap-4 mb-6">
                 <div>
@@ -561,7 +581,7 @@ export default function TaskDashboard() {
             {/* Top Assigners */}
             <StatCard
               label="Top Assigners"
-              value={stats.topAssigners.length > 0 ? stats.topAssigners[0].name : "—"}
+              value={stats.topAssignerNames}
               sub={stats.topAssigners.length > 0 ? `${stats.topAssigners[0].count} tasks assigned` : "No data yet"}
               accent="#4f46e5"
             >
@@ -612,7 +632,7 @@ export default function TaskDashboard() {
             {/* Top Completers */}
             <StatCard
               label="Top Completers"
-              value={stats.topCompleters.length > 0 ? stats.topCompleters[0].name : "—"}
+              value={stats.topCompleterNames}
               sub={stats.topCompleters.length > 0 ? `${stats.topCompleters[0].count} tasks completed` : "No completions yet"}
               accent="#059669"
             >
@@ -689,7 +709,8 @@ export default function TaskDashboard() {
                       tab.key === "all" ? tasks.length
                       : tab.key === "ongoing" ? stats.counts.ongoing
                       : tab.key === "pending" ? stats.counts.pending
-                      : stats.counts.completed;
+                      : tab.key === "on-hold" ? stats.counts["on-hold"]
+                      : stats.counts.completed
                     const active = filter === tab.key;
                     return (
                       <button
@@ -768,6 +789,12 @@ export default function TaskDashboard() {
                                 <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
                                 {cfg.label}
                               </span>
+                              {task.status === "on-hold" && task.on_hold_reason && (
+                                <div className="mt-2 p-1.5 bg-yellow-50 border border-yellow-100 rounded text-[8px] text-yellow-800 max-w-[150px]">
+                                  <span className="font-bold uppercase mr-1 text-[8px]">Reason:</span>
+                                  {task.on_hold_reason}
+                                </div>
+                              )}
                             </td>
                             <td className="px-6 py-5">
                               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider

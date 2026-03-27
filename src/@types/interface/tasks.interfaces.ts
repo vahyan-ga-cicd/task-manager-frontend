@@ -23,4 +23,6 @@ export interface ITask {
   assigned_by_email?: string;
   deadline?: string;
   created_at: string;
+  on_hold_reason?: string;
+  completed_at?: string;
 }

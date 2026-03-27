@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import {
   createTask,
-  deleteTask,
+  // deleteTask,
   updateTaskStatus,
   fetchTaskStats,
   adminDeleteTask,
@@ -63,32 +63,13 @@ bg-opacity-100 text-black`}
 export default function Tasks() {
   const { fetchUser, userData } = useAuthContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    ongoing: 0,
-    complete: 0,
-  });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const isAdmin = userData?.data?.user_data?.role === "admin";
   const isCoordinator = userData?.data?.user_data?.role === "coordinator";
+  const isNormalUser = !isAdmin && !isCoordinator;
   const currentUserId = userData?.data?.user_data?.user_id;
-
-  const getStats = React.useCallback(async () => {
-    try {
-      let res;
-      if (isAdmin) {
-        res = await fetchAdminStats();
-      } else {
-        res = await fetchTaskStats();
-      }
-      if (res?.data) setStats(res.data);
-    } catch (error) {
-      console.error("Failed to fetch stats:", error);
-    }
-  }, [isAdmin]);
 
   const { tasks, getTasks } = useTasks(userData?.data?.user_data?.role);
   
@@ -101,30 +82,91 @@ export default function Tasks() {
     return tasks;
   }, [tasks, view, isCoordinator, currentUserId]);
 
+  const calculatedStats = useMemo(() => {
+    const s = {
+      total: displayTasks.length,
+      pending: displayTasks.filter(t => t.status === "pending").length,
+      ongoing: displayTasks.filter(t => t.status === "ongoing").length,
+      complete: displayTasks.filter(t => t.status === "complete").length,
+      "on-hold": displayTasks.filter(t => t.status === "on-hold").length,
+    };
+    return s;
+  }, [displayTasks]);
+
+  // High Priority Tasks for warning bar
+  const highPriorityTasks = useMemo(() => {
+    if (isNormalUser) {
+      return tasks.filter(t => t.priority === "High" && t.status !== "complete");
+    }
+    if (isCoordinator) {
+      // Show high priority tasks assigned TO the coordinator, regardless of view
+      return tasks.filter(t => t.user_id === currentUserId && t.priority === "High" && t.status !== "complete");
+    }
+    return [];
+  }, [tasks, isNormalUser, isCoordinator, currentUserId]);
+
   useEffect(() => {
+    const getStats = async () => {
+      try {
+        if (isAdmin) {
+          await fetchAdminStats();
+        } else {
+          await fetchTaskStats();
+        }
+        // Even if we fetch, we are using calculatedStats for primary UI
+      } catch (error) {
+        console.error("Failed to fetch stats:", error);
+      }
+    };
     if (userData?.data?.user_data?.role) getStats();
-  }, [userData?.data?.user_data?.role, tasks, getStats]);
+  }, [userData?.data?.user_data?.role, tasks, isAdmin]);
 
   const handleUpdateTask = async (task: ITask, updates: Partial<ITask>) => {
     try {
-      if (isAdmin) {
-        await adminUpdateTask(task.user_id, task.task_id, updates);
-      } else {
+      if (updates.status === "ongoing") {
+        // Check if the assignee already has an ongoing task
+        const isSelf = task.user_id === currentUserId;
+        const alreadyOngoing = tasks.some(
+          (t) => t.status === "ongoing" && t.user_id === task.user_id && t.task_id !== task.task_id
+        );
 
-        if (updates.status) {
-          await updateTaskStatus(task.task_id, updates.status);
-        } else {
-        
-          console.warn("Non-admin users can only update task status.");
+        if (alreadyOngoing) {
+          setErrorMsg(isSelf ? "You can do one task at a time" : "This user already has an ongoing task");
+          return;
         }
       }
+
+      if (updates.status === "on-hold") {
+        const userInput = window.prompt("Why do you want to put this task on hold?", task.on_hold_reason || "");
+        if (userInput === null) return; // cancel update
+        updates.on_hold_reason = userInput;
+      }
+
+      // if (isAdmin) {
+      //   await adminUpdateTask(task.user_id, task.task_id, updates);
+      // }
+      // else if (isCoordinator) {
+      //   await adminUpdateTask(task.user_id, task.task_id, updates);
+      // } 
+      // else {
+        if (updates.status) {
+          await updateTaskStatus(task.task_id, updates.status as "pending" | "ongoing" | "complete" | "on-hold", updates.on_hold_reason);
+        } else {
+          console.warn("Non-admin users can only update task status.");
+        }
+      // }
       await getTasks();
-      await getStats();
       await fetchUser(); 
     } catch (error: unknown) {
       const err = error as Error;
       console.error("Failed to update task:", err);
-      setErrorMsg(err.message || "Operation failed");
+      
+      // If backend returns a generic error, we can still show our custom message if we detect it's a conflict
+      if (err.message.toLowerCase().includes("failed") && updates.status === "ongoing") {
+         setErrorMsg("You can do one task at a time");
+      } else {
+         setErrorMsg(err.message || "Operation failed");
+      }
       await getTasks();
     }
   };
@@ -133,9 +175,8 @@ export default function Tasks() {
     setDeletingId(taskId);
     try {
       if (isAdmin || isCoordinator) await adminDeleteTask(targetUserId, taskId);
-      else await deleteTask(taskId);
+      // else await deleteTask(taskId);
       await getTasks();
-      await getStats();
       await fetchUser();
     } catch (error) {
       console.error("Failed to delete task:", error);
@@ -148,11 +189,12 @@ export default function Tasks() {
     try {
       if (isAdmin || isCoordinator) {
         await assigntask(data);
-      } else {
-        await createTask(data);
-      }
+      } 
+      
+      // else {
+      //   await createTask(data);
+      // }
       await getTasks();
-      await getStats();
       setIsModalOpen(false);
     } catch (error) {
       console.error("Failed to add task:", error);
@@ -161,8 +203,9 @@ export default function Tasks() {
 
   const statusColorMap: Record<string, string> = {
     pending: "bg-amber-100 text-amber-800 border-amber-300",
-    ongoing: "bg-blue-100 text-blue-800 border-blue-300", // ✅ FIX
+    ongoing: "bg-blue-100 text-blue-800 border-blue-300",
     complete: "bg-green-100 text-green-800 border-green-300",
+    "on-hold": "bg-orange-100 text-orange-800 border-orange-300",
   };
 
   return (
@@ -205,10 +248,78 @@ export default function Tasks() {
         .priority-left-bar-High   { border-left: 3px solid #f87171; }
         .priority-left-bar-Medium { border-left: 3px solid #fb923c; }
         .priority-left-bar-Low    { border-left: 3px solid #cbd5e1; }
+        
+        .high-priority-alert {
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+          animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
       `}</style>
 
       <div className="tasks-root w-full max-w-5xl mx-auto space-y-6">
-        <Stats stats={stats} />
+        
+        {/* High Priority Warning Bar */}
+        {highPriorityTasks.length > 0 && (
+  <div className="rounded-2xl overflow-hidden border border-red-200 shadow-md shadow-red-100/50">
+    {/* Top severity strip */}
+    <div className="bg-red-600 px-5 py-1.5 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+        <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-red-100">
+          Priority Alert · Action Required
+        </span>
+      </div>
+      <span className="text-[10px] font-bold text-red-200 tracking-wider uppercase">
+        HIGH
+      </span>
+    </div>
+
+    {/* Main body */}
+    <div className="bg-red-50 px-5 py-4 flex items-start justify-between gap-4">
+      <div className="flex items-start gap-4">
+        <div className="mt-0.5 flex-shrink-0 w-9 h-9 rounded-xl bg-red-100 border border-red-200 flex items-center justify-center">
+          <AlertCircle className="h-5 w-5 text-red-600" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-red-900 leading-snug">
+            {highPriorityTasks.length} High Priority Task{highPriorityTasks.length > 1 ? "s" : ""} Require{highPriorityTasks.length === 1 ? "s" : ""} Attention
+          </p>
+          <p className="text-xs text-red-600 mt-1 leading-relaxed font-medium">
+            {highPriorityTasks.map(t => t.title).join(" · ")}
+          </p>
+        </div>
+      </div>
+      <div className="flex-shrink-0 mt-0.5">
+        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-600 text-white text-sm font-extrabold shadow-sm">
+          {highPriorityTasks.length}
+        </span>
+      </div>
+    </div>
+
+    {/* Bottom task pills row */}
+    <div className="bg-white border-t border-red-100 px-5 py-2.5 flex flex-wrap gap-2">
+      {highPriorityTasks.map(t => (
+        <span
+          key={t.task_id}
+          className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md border ${
+            t.status === "complete"
+              ? "bg-green-50 text-green-700 border-green-200"
+              : "bg-red-50 text-red-700 border-red-200"
+          }`}
+        >
+          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+            t.status === "complete" ? "bg-green-500" : "bg-red-500"
+          }`} />
+          {t.title}
+          {t.status === "complete" && (
+            <span className="text-[9px] uppercase tracking-wider text-green-600 font-bold ml-0.5">✓ Done</span>
+          )}
+        </span>
+      ))}
+    </div>
+  </div>
+)}
+
+        <Stats stats={calculatedStats} />
 
         {errorMsg && (
           <div className="text-black error-banner flex items-start gap-3 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3">
@@ -234,10 +345,10 @@ export default function Tasks() {
               </div>
               <div>
                 <h3 className="text-base font-bold text-gray-900 leading-tight">
-                  {isAdmin ? "All Tasks" : "Your Tasks"}
+                  {isAdmin ? "All Tasks" : (isCoordinator ? (view === "assigned_by_me" ? "Tasks You Created" : "Tasks Assigned To You") : "Your Tasks")}
                 </h3>
                 <p className="text-[11px] text-gray-400 font-medium mt-0.5">
-                  {tasks.length} task{tasks.length !== 1 ? "s" : ""} total
+                  {displayTasks.length} task{displayTasks.length !== 1 ? "s" : ""} {view === "all" ? "total" : "in this view"}
                 </p>
               </div>
             </div>
@@ -298,7 +409,6 @@ export default function Tasks() {
                 const isAssignedByMe = task.assigned_by_id === currentUserId;
                 const isAssignedToMe = task.user_id === currentUserId;
 
-              
                 const canDelete = isAdmin || (isCoordinator && isAssignedByMe && !isAssignedToMe);
                 const canUpdateStatus = ((!isAdmin && !isCoordinator) || (isCoordinator && isAssignedToMe)) && task.status !== "complete";
                 return (
@@ -365,7 +475,7 @@ export default function Tasks() {
 
                         <div className="text-black flex justify-center items-center items-center gap-1.5 bg-rose-50 border border-rose-100 text-rose-600 px-3 py-1.5 rounded-lg text-xs font-medium">
                           <CalendarDays className="h-3.5 w-3.5 opacity-70 flex-shrink-0" />
-                          <span className="text-rose-400 mr-2">DateLine:</span>
+                          <span className="text-rose-400 mr-2">Deadline:</span>
                           <span className="font-semibold font-mono text-rose-700">
                             {task.deadline
                               ? new Date(task.deadline).toLocaleDateString(
@@ -385,40 +495,49 @@ export default function Tasks() {
                       <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-3.5 border-t border-gray-100">
                         <div className="flex flex-wrap items-center gap-3">
                           {/* Status */}
-                          <div className=" flex items-center gap-2">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">
-                              Status
-                            </span>
-
-                            {canUpdateStatus ? (
-                              // 👇 Only non-completed users (including coordinators if assigned to them) can edit
-                              <StyledSelect
-                                value={task.status}
-                                onChange={(v) =>
-                                  handleUpdateTask(task, { status: v })
-                                }
-                                options={[
-                                  { value: "pending", label: "Pending" },
-                                  { value: "ongoing", label: "Ongoing" },
-                                  { value: "complete", label: "Complete" },
-                                ]}
-                                colorMap={statusColorMap}
-                              />
-                            ) : (
-                              // 👇 Admin OR Assigned by others OR Completed → only view (no edit)
-                              <span
-                                className={`px-2 py-[2px] rounded text-[10px] font-bold uppercase text-black ${
-                                  task.status === "pending"
-                                    ? "bg-gray-200"
-                                    : task.status === "ongoing"
-                                      ? "bg-blue-200"
-                                      : task.status === "complete"
-                                        ? "bg-green-200"
-                                        : "bg-gray-200"
-                                }`}
-                              >
-                                {task.status}
+                          <div className="flex flex-col gap-2">
+                            <div className=" flex items-center gap-2">
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">
+                                Status
                               </span>
+
+                              {canUpdateStatus ? (
+                                <StyledSelect
+                                  value={task.status}
+                                  onChange={(v) =>
+                                    handleUpdateTask(task, { status: v })
+                                  }
+                                  options={[
+                                    { value: "pending", label: "Pending" },
+                                    { value: "ongoing", label: "Ongoing" },
+                                    { value: "complete", label: "Complete" },
+                                    { value: "on-hold", label: "On-hold" },
+                                  ]}
+                                  colorMap={statusColorMap}
+                                />
+                              ) : (
+                                <span
+                                  className={`px-2 py-[2px] rounded text-[10px] font-bold uppercase text-black ${
+                                    task.status === "pending"
+                                      ? "bg-gray-200"
+                                      : task.status === "ongoing"
+                                        ? "bg-blue-200"
+                                        : task.status === "complete"
+                                          ? "bg-green-200"
+                                          : task.status === "on-hold"
+                                            ? "bg-yellow-200"
+                                            : "bg-gray-200"
+                                  }`}
+                                >
+                                  {task.status}
+                                </span>
+                              )}
+                            </div>
+                            {task.status === "on-hold" && task.on_hold_reason && (
+                              <div className="p-2 bg-amber-50 border border-amber-100 rounded-lg text-[10px] text-amber-800 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+                                <span className="font-bold uppercase mr-1">Reason:</span>
+                                {task.on_hold_reason}
+                              </div>
                             )}
                           </div>
 
@@ -427,40 +546,22 @@ export default function Tasks() {
                           {/* Priority */}
                           <div className="flex items-center gap-2">
                             <div className="flex items-center text-[10px] font-bold uppercase tracking-widest">
-                              {/* <span className="text-gray-400">Priority :</span> */}
-
                               <span
                                 className={`text-[10px] font-bold uppercase tracking-widest whitespace-nowrap
-    ${
-      task?.priority === "High"
-        ? "text-red-500"
-        : task?.priority === "Medium"
-          ? "text-yellow-500"
-          : task?.priority === "Low"
-            ? "text-green-500"
-            : "text-gray-400"
-    }
-  `}
+                                  ${
+                                    task?.priority === "High"
+                                      ? "text-red-500"
+                                      : task?.priority === "Medium"
+                                        ? "text-yellow-500"
+                                        : task?.priority === "Low"
+                                          ? "text-green-500"
+                                          : "text-gray-400"
+                                  }
+                                `}
                               >
                                 Priority : {task?.priority}
                               </span>
                             </div>
-                            {/* {isAdmin ? (
-                              <StyledSelect<Priority>
-                                value={priority}
-                                onChange={(v) =>
-                                  handleUpdateTask(task, { priority: v })
-                                }
-                                options={[
-                                  { value: "Normal", label: "· Normal" },
-                                  { value: "Medium", label: " Medium" },
-                                  { value: "High", label: " High" },
-                                ]}
-                                colorMap={priorityColorMap}
-                              />
-                            ) : (
-                              <PriorityBadge priority={priority} />
-                            )} */}
                           </div>
                         </div>
 

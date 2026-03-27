@@ -14,6 +14,7 @@ interface StatsProps {
     pending: number;
     ongoing: number;
     complete: number;
+    "on-hold"?: number;
   };
 }
 
@@ -46,12 +47,19 @@ export default function Stats({ stats }: StatsProps) {
       icon: CheckCircle2,
       color: "bg-emerald-50 text-emerald-600",
       borderColor: "border-emerald-100"
+    },
+    {
+      label: "On Hold",
+      value: stats["on-hold"] || 0,
+      icon: AlertCircle, // Changed from Clock to AlertCircle or something else
+      color: "bg-orange-50 text-orange-600",
+      borderColor: "border-orange-100"
     }
   ];
 
   // Stats.tsx - replace the return block
 return (
-<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 w-full">
+<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6 w-full">
     {statItems.map((item, index) => (
       <div
         key={index}

@@ -15,4 +15,5 @@ export interface ITaskResponse {
   assigned_by_email?: string;
   assigned_to_email?: string;
   assigned_to_name?: string;
+  on_hold_reason?: string;
 }
