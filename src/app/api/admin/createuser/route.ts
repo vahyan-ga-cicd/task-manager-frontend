@@ -5,11 +5,13 @@ export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");
     const token = authHeader?.replace("Bearer ", "");
-    const { username, email, password } = await request.json();
+    const { username, email, password, role, department } = await request.json();
     const payload = {
       username,
       email,
       password,
+      role,
+      department,
     };
 
     if (!token) {
@@ -23,12 +25,14 @@ export async function POST(request: NextRequest) {
       );
     }
     const res = await axiosClient.post(
-      `/admin/create-user`,
+      `/admin/createuser`,
       payload,
       getAuthHeaders(token as string),
     );
 
-    return NextResponse.json(res.data);
+    return NextResponse.json({
+      message:"User Created Succesfully"
+    });
   } catch (error) {
     console.log(error);
     return NextResponse.json(

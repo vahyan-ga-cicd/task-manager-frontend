@@ -6,7 +6,7 @@ import { createuser, updateuser } from "@/utils/api/admin/admin";
 import Sidebar from "./Sidebar";
 import { IUser } from "@/@types/interface/admin.interfaces";
 import { toast } from "sonner";
-
+  
 /* ── Inline SVG Icons ── */
 const Icons = {
   Search: () => (
@@ -388,7 +388,9 @@ function AdminDashboard() {
     };
     try {
       const res = await createuser(payload);
+      console.log("Full Res",res)
       toast.success(res.message);
+      console.log(res.message)
       setShowAddUser(false);
       setAddUserData(ADD_USER_DEFAULTS);
       setAddUserErrors({});

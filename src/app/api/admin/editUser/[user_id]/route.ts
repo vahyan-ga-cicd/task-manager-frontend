@@ -9,12 +9,15 @@ export async function PUT(
     const authHeader = request.headers.get("authorization");
     const token = authHeader?.replace("Bearer ", "");
     const { user_id } = await context.params;
-    const { username, email, password , activation_status} = await request.json();
+    const { username, email, password, activation_status, role, department } =
+      await request.json();
     const payload = {
       username,
       email,
       password,
-      activation_status
+      activation_status,
+      role,
+      department,
     };
     if (!token) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -26,13 +29,14 @@ export async function PUT(
         { status: 400 },
       );
     }
+    console.log(payload);
     const res = await axiosClient.put(
-      `/admin/update-user/${user_id}`,
+      `/admin/editUser/${user_id}`,
       payload,
       getAuthHeaders(token as string),
     );
 
-    return NextResponse.json(res.data);
+    return NextResponse.json(res.data );
   } catch (error: unknown) {
     console.log(error);
     return NextResponse.json(
