@@ -527,7 +527,7 @@ export default function TaskDashboard() {
             {/* Status Overview */}
             <StatCard
               label="Status Overview"
-              value={stats.counts.ongoing + stats.counts.pending + stats.counts.completed}
+              value={tasks.length}
               sub="Total tracked tasks"
               accent="#111827"
             >
