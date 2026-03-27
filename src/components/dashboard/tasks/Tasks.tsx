@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import AddTaskModal from "./AddTaskModal";
+import { ITask, ICreateTask } from "@/@types/interface/tasks.interfaces";
+import { Priority } from "@/@types/constant/priority.constant";
 import { useTasks } from "@/hooks/useTasks";
 import { useAuthContext } from "@/context/AuthContext";
 import {
@@ -10,8 +12,6 @@ import {
   ListChecks,
   Plus,
   X,
-  Clock,
-  CheckCircle2,
   Loader2,
   CalendarDays,
   User,
@@ -25,82 +25,8 @@ import {
   fetchTaskStats,
   adminDeleteTask,
 } from "@/utils/api/tasksApi";
+import {fetchAdminStats,assigntask,adminUpdateTask}  from "@/utils/api/admin/admin"; 
 import Stats from "../stats/Stats";
-
-type TaskStatus = "pending" | "ongoing" | "complete";
-type Priority = "Normal" | "Medium" | "High";
-
-const STATUS_CONFIG = {
-  pending: {
-    label: "Pending",
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    border: "border-amber-200",
-    dot: "bg-amber-400",
-  },
-  ongoing: {
-    label: "Ongoing",
-    bg: "bg-sky-50",
-    text: "text-sky-700",
-    border: "border-sky-200",
-    dot: "bg-sky-400",
-  },
-  complete: {
-    label: "Complete",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-    dot: "bg-emerald-500",
-  },
-} as const;
-
-const PRIORITY_CONFIG = {
-  High: {
-    label: "High",
-    bg: "bg-red-50",
-    text: "text-red-600",
-    border: "border-red-200",
-    icon: "🔥",
-  },
-  Medium: {
-    label: "Medium",
-    bg: "bg-orange-50",
-    text: "text-orange-600",
-    border: "border-orange-200",
-    icon: "⚡",
-  },
-  Normal: {
-    label: "Normal",
-    bg: "bg-slate-50",
-    text: "text-slate-500",
-    border: "border-slate-200",
-    icon: "·",
-  },
-} as const;
-
-function StatusBadge({ status }: { status: TaskStatus }) {
-  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${cfg.bg} ${cfg.text} ${cfg.border}`}
-    >
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-      {cfg.label}
-    </span>
-  );
-}
-
-function PriorityBadge({ priority }: { priority: string }) {
-  const cfg = PRIORITY_CONFIG[priority as Priority] ?? PRIORITY_CONFIG.Normal;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border ${cfg.bg} ${cfg.text} ${cfg.border}`}
-    >
-      <span className="text-[10px]">{cfg.icon}</span>
-      {cfg.label}
-    </span>
-  );
-}
 
 function StyledSelect<T extends string>({
   value,
@@ -147,12 +73,13 @@ export default function Tasks() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const isAdmin = userData?.data?.user_data?.role === "admin";
+  const isCoordinator = userData?.data?.user_data?.role === "coordinator";
+  const currentUserId = userData?.data?.user_data?.user_id;
 
   const getStats = React.useCallback(async () => {
     try {
       let res;
       if (isAdmin) {
-        const { fetchAdminStats } = await import("@/utils/api/admin/admin");
         res = await fetchAdminStats();
       } else {
         res = await fetchTaskStats();
@@ -164,29 +91,40 @@ export default function Tasks() {
   }, [isAdmin]);
 
   const { tasks, getTasks } = useTasks(userData?.data?.user_data?.role);
+  
+  const [view, setView] = useState<"all" | "assigned_to_me" | "assigned_by_me">("all");
+
+  const displayTasks = useMemo(() => {
+    if (!isCoordinator) return tasks;
+    if (view === "assigned_by_me") return tasks.filter(t => t.assigned_by_id === currentUserId);
+    if (view === "assigned_to_me") return tasks.filter(t => t.user_id === currentUserId);
+    return tasks;
+  }, [tasks, view, isCoordinator, currentUserId]);
 
   useEffect(() => {
     if (userData?.data?.user_data?.role) getStats();
   }, [userData?.data?.user_data?.role, tasks, getStats]);
 
-  const handleUpdateTask = async (
-    task: any,
-    updates: { status?: TaskStatus; priority?: Priority },
-  ) => {
-    setErrorMsg(null);
+  const handleUpdateTask = async (task: ITask, updates: Partial<ITask>) => {
     try {
       if (isAdmin) {
-        // const { adminUpdateTask } = await import("@/utils/api/admin/admin");
-        // await adminUpdateTask(task.user_id, task.task_id, updates);
-      } else if (updates.status) {
-        await updateTaskStatus(task.task_id, updates.status);
+        await adminUpdateTask(task.user_id, task.task_id, updates);
+      } else {
+
+        if (updates.status) {
+          await updateTaskStatus(task.task_id, updates.status);
+        } else {
+        
+          console.warn("Non-admin users can only update task status.");
+        }
       }
       await getTasks();
       await getStats();
-      await fetchUser();
-    } catch (error: any) {
-      console.error("Failed to update task:", error);
-      setErrorMsg(error.message || "Operation failed");
+      await fetchUser(); 
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error("Failed to update task:", err);
+      setErrorMsg(err.message || "Operation failed");
       await getTasks();
     }
   };
@@ -194,7 +132,7 @@ export default function Tasks() {
   const handleDelete = async (targetUserId: string, taskId: string) => {
     setDeletingId(taskId);
     try {
-      if (isAdmin) await adminDeleteTask(targetUserId, taskId);
+      if (isAdmin || isCoordinator) await adminDeleteTask(targetUserId, taskId);
       else await deleteTask(taskId);
       await getTasks();
       await getStats();
@@ -206,10 +144,9 @@ export default function Tasks() {
     }
   };
 
-  const handleAddTask = async (data: any) => {
+  const handleAddTask = async (data: ICreateTask) => {
     try {
-      if (isAdmin) {
-        const { assigntask } = await import("@/utils/api/admin/admin");
+      if (isAdmin || isCoordinator) {
         await assigntask(data);
       } else {
         await createTask(data);
@@ -226,11 +163,6 @@ export default function Tasks() {
     pending: "bg-amber-100 text-amber-800 border-amber-300",
     ongoing: "bg-blue-100 text-blue-800 border-blue-300", // ✅ FIX
     complete: "bg-green-100 text-green-800 border-green-300",
-  };
-  const priorityColorMap: Record<string, string> = {
-    Normal: "bg-slate-50  text-slate-600  border-slate-200",
-    Medium: "bg-orange-50 text-orange-600 border-orange-200",
-    High: "bg-red-50    text-red-600    border-red-200",
   };
 
   return (
@@ -272,7 +204,7 @@ export default function Tasks() {
 
         .priority-left-bar-High   { border-left: 3px solid #f87171; }
         .priority-left-bar-Medium { border-left: 3px solid #fb923c; }
-        .priority-left-bar-Normal { border-left: 3px solid #cbd5e1; }
+        .priority-left-bar-Low    { border-left: 3px solid #cbd5e1; }
       `}</style>
 
       <div className="tasks-root w-full max-w-5xl mx-auto space-y-6">
@@ -309,7 +241,7 @@ export default function Tasks() {
                 </p>
               </div>
             </div>
-            {isAdmin && (
+            {(isAdmin || isCoordinator) && (
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all active:scale-95 shadow-sm shadow-indigo-200"
@@ -320,9 +252,33 @@ export default function Tasks() {
             )}
           </div>
 
+          {/* Coordinator Switcher */}
+          {isCoordinator && (
+            <div className="px-6 py-2 border-b border-gray-100 bg-gray-50 flex gap-2">
+               <button 
+                 onClick={() => setView("all")}
+                 className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${view === "all" ? "bg-indigo-600 text-white" : "bg-white text-gray-500 border border-gray-200"}`}
+               >
+                 All
+               </button>
+               <button 
+                 onClick={() => setView("assigned_by_me")}
+                 className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${view === "assigned_by_me" ? "bg-indigo-600 text-white" : "bg-white text-gray-500 border border-gray-200"}`}
+               >
+                 Your Tasks
+               </button>
+               <button 
+                 onClick={() => setView("assigned_to_me")}
+                 className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${view === "assigned_to_me" ? "bg-indigo-600 text-white" : "bg-white text-gray-500 border border-gray-200"}`}
+               >
+                 Assigned Tasks
+               </button>
+            </div>
+          )}
+
           {/* Task List */}
           <div className="p-5 space-y-3">
-            {tasks.length === 0 ? (
+            {displayTasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <div className="w-16 h-16 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex items-center justify-center mb-4">
                   <ListChecks className="h-7 w-7 text-gray-300" />
@@ -337,8 +293,14 @@ export default function Tasks() {
                 </p>
               </div>
             ) : (
-              tasks.map((task: any) => {
-                const priority = (task.priority ?? "Normal") as Priority;
+              displayTasks.map((task: ITask) => {
+                const priority = (task.priority ?? "Low") as Priority;
+                const isAssignedByMe = task.assigned_by_id === currentUserId;
+                const isAssignedToMe = task.user_id === currentUserId;
+
+              
+                const canDelete = isAdmin || (isCoordinator && isAssignedByMe && !isAssignedToMe);
+                const canUpdateStatus = ((!isAdmin && !isCoordinator) || (isCoordinator && isAssignedToMe)) && task.status !== "complete";
                 return (
                   <div
                     key={task.task_id}
@@ -358,7 +320,7 @@ export default function Tasks() {
                             </p>
                           )}
                         </div>
-                        {isAdmin && (
+                        {canDelete && (
                           <button
                             onClick={() =>
                               handleDelete(task.user_id, task.task_id)
@@ -385,16 +347,16 @@ export default function Tasks() {
                             <User className="h-3.5 w-3.5 opacity-70 flex-shrink-0" />
                           )}
                           <span className="text-violet-500">
-                            {isAdmin ? "To:" : "By:"}
+                            {isAdmin || (isCoordinator && isAssignedByMe) ? "To:" : "By:"}
                           </span>
                           <div className="flex flex-col leading-tight">
                             <span className="font-semibold text-violet-800">
-                              {isAdmin
+                              {(isAdmin || (isCoordinator && isAssignedByMe))
                                 ? task.assigned_to_name
                                 : task.assigned_by}
                             </span>
                             <span className="text-[10px] text-violet-400 font-mono">
-                              {isAdmin
+                              {(isAdmin || (isCoordinator && isAssignedByMe))
                                 ? task.assigned_to_email
                                 : task.assigned_by_email}
                             </span>
@@ -428,8 +390,22 @@ export default function Tasks() {
                               Status
                             </span>
 
-                            {isAdmin || task.status === "complete" ? (
-                              // 👇 Admin OR Completed → only view (no edit)
+                            {canUpdateStatus ? (
+                              // 👇 Only non-completed users (including coordinators if assigned to them) can edit
+                              <StyledSelect
+                                value={task.status}
+                                onChange={(v) =>
+                                  handleUpdateTask(task, { status: v })
+                                }
+                                options={[
+                                  { value: "pending", label: "Pending" },
+                                  { value: "ongoing", label: "Ongoing" },
+                                  { value: "complete", label: "Complete" },
+                                ]}
+                                colorMap={statusColorMap}
+                              />
+                            ) : (
+                              // 👇 Admin OR Assigned by others OR Completed → only view (no edit)
                               <span
                                 className={`px-2 py-[2px] rounded text-[10px] font-bold uppercase text-black ${
                                   task.status === "pending"
@@ -443,20 +419,6 @@ export default function Tasks() {
                               >
                                 {task.status}
                               </span>
-                            ) : (
-                              // 👇 Only non-completed users can edit
-                              <StyledSelect
-                                value={task.status}
-                                onChange={(v) =>
-                                  handleUpdateTask(task, { status: v })
-                                }
-                                options={[
-                                  { value: "pending", label: "Pending" },
-                                  { value: "ongoing", label: "Ongoing" },
-                                  { value: "complete", label: "Complete" },
-                                ]}
-                                colorMap={statusColorMap}
-                              />
                             )}
                           </div>
 
@@ -532,7 +494,7 @@ export default function Tasks() {
           </div>
         </div>
 
-        {isAdmin && (
+        {(isAdmin || isCoordinator) && (
           <AddTaskModal
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}

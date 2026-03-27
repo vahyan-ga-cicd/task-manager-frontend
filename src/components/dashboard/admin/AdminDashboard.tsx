@@ -4,6 +4,8 @@ import { useAdmin } from "@/hooks/admin";
 import React, { useState, useMemo } from "react";
 import { createuser, updateuser } from "@/utils/api/admin/admin";
 import Sidebar from "./Sidebar";
+import { IUser } from "@/@types/interface/admin.interfaces";
+import { toast } from "sonner";
 
 /* ── Inline SVG Icons ── */
 const Icons = {
@@ -173,6 +175,25 @@ const Icons = {
   ),
 };
 
+/* ── Interfaces ── */
+interface IUserEditFormData {
+  username: string;
+  email: string;
+  password?: string;
+  activation_status: "active" | "inactive";
+  role: string;
+  department: string;
+}
+
+interface IUserAddFormData {
+  username: string;
+  email: string;
+  password?: string;
+  confirmPassword?: string;
+  role: string;
+  department: string;
+}
+
 /* ── Stat illustrations ── */
 const StatIllustration = ({
   type,
@@ -244,29 +265,33 @@ const StatIllustration = ({
 };
 
 /* ── Add User Modal ── */
-const ADD_USER_DEFAULTS = {
+const ADD_USER_DEFAULTS: IUserAddFormData = {
   username: "",
   email: "",
   password: "",
   confirmPassword: "",
+  role: "user",
+  department: "IT",
 };
 
 function AdminDashboard() {
   const { users, fetchAllUsers } = useAdmin();
 
   const [activeTab, setActiveTab] = useState("users");
-  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editingUser, setEditingUser] = useState<IUser | null>(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [revealedPasswords, setRevealedPasswords] = useState<Set<string>>(
     new Set(),
   );
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<IUserEditFormData>({
     username: "",
     email: "",
     password: "",
-    activation_status: "",
+    activation_status: "active",
+    role: "user",
+    department: "IT",
   });
 
   // ── Add User state ──
@@ -283,24 +308,31 @@ function AdminDashboard() {
     window.location.href = "/login";
   };
 
-  const handleEdit = (user: any) => {
+  const handleEdit = (user: IUser) => {
     setEditingUser(user);
     setFormData({
       username: user.username,
       email: user.email,
       password: "",
       activation_status: user.activation_status || "active",
+      role: user.role || "user",
+      department: user.department || "IT",
     });
   };
 
   const handleUpdate = async () => {
+    if (!editingUser) return;
     try {
       const res = await updateuser(editingUser.user_id, formData);
-      alert(res.message);
+      toast.success(res.message);
       setEditingUser(null);
       fetchAllUsers();
-    } catch (err: any) {
-      alert(err?.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(err.message);
+      } else {
+        toast.error("An unknown error occurred");
+      }
     }
   };
 
@@ -351,15 +383,25 @@ function AdminDashboard() {
       username: addUserData.username,
       email: addUserData.email,
       password: addUserData.password,
+      role: addUserData.role,
+      department: addUserData.department,
     };
-    const res = await createuser(payload);
-
-    console.log("New User Data:", res);
-    setShowAddUser(false);
-    setAddUserData(ADD_USER_DEFAULTS);
-    setAddUserErrors({});
-    setShowAddPwd(false);
-    setShowAddConfirmPwd(false);
+    try {
+      const res = await createuser(payload);
+      toast.success(res.message);
+      setShowAddUser(false);
+      setAddUserData(ADD_USER_DEFAULTS);
+      setAddUserErrors({});
+      setShowAddPwd(false);
+      setShowAddConfirmPwd(false);
+      fetchAllUsers();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(err.message);
+      } else {
+        toast.error("An unknown error occurred");
+      }
+    }
   };
 
   const handleAddUserClose = () => {
@@ -372,10 +414,10 @@ function AdminDashboard() {
 
   const filteredUsers = useMemo(() => {
     return users
-      .filter((user: any) =>
+      .filter((user) =>
         user.user_id.toLowerCase().includes(search.toLowerCase()),
       )
-      .filter((user: any) => {
+      .filter((user) => {
         if (filterStatus === "all") return true;
         if (filterStatus === "active")
           return (user.activation_status || "active") === "active";
@@ -387,10 +429,10 @@ function AdminDashboard() {
 
   const totalUsers = users.length;
   const activeUsers = users.filter(
-    (u: any) => (u.activation_status || "active") === "active",
+    (u) => (u.activation_status || "active") === "active",
   ).length;
   const blockedUsers = users.filter(
-    (u: any) => u.activation_status === "inactive",
+    (u) => u.activation_status === "inactive",
   ).length;
 
   const stats = [
@@ -642,15 +684,16 @@ function AdminDashboard() {
                     { label: "User ID" },
                     { label: "Status" },
                     { label: "Role" },
-                    { label: "Original Password", icon: <Icons.Key /> },
-                    { label: "Hashed Password", icon: <Icons.Hash /> },
+                    { label: "Dept" },
+                    { label: "Password", icon: <Icons.Key /> },
+                    { label: "Hash", icon: <Icons.Hash /> },
                     { label: "Action" },
                   ].map(({ label, icon }, i) => (
                     <th
                       key={i}
                       style={{
                         padding: "12px 18px",
-                        textAlign: i === 5 ? "right" : "left",
+                        textAlign: i === 7 ? "right" : "left",
                         fontSize: 10,
                         fontWeight: 600,
                         color: "#94a3b8",
@@ -673,7 +716,7 @@ function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((user: any, idx: number) => {
+                {filteredUsers.map((user, idx) => {
                   const isActive =
                     (user.activation_status || "active") === "active";
                   const revealed = revealedPasswords.has(user.user_id);
@@ -786,14 +829,21 @@ function AdminDashboard() {
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-semibold 
     ${
-      user.role === "admin"
-        ? "bg-red-100 text-red-700"
-        : user.role === "coordinator"
-          ? "bg-yellow-100 text-yellow-700"
-          : "bg-green-100 text-green-700"
-    }`}
+                          user.role === "admin"
+                            ? "bg-red-100 text-red-700"
+                            : user.role === "coordinator"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-green-100 text-green-700"
+                        }`}
                         >
                           {user.role}
+                        </span>
+                      </td>
+
+                      {/* Department */}
+                      <td style={{ padding: "14px 18px" }}>
+                        <span style={{ fontSize: 13, color: "#475569" }}>
+                          {user.department || "IT"}
                         </span>
                       </td>
                       {/* Original Password */}
@@ -952,7 +1002,7 @@ function AdminDashboard() {
 
           {/* Mobile Cards */}
           <div className="md:hidden flex flex-col gap-3">
-            {filteredUsers.map((user: any) => {
+            {filteredUsers.map((user) => {
               const isActive =
                 (user.activation_status || "active") === "active";
               const revealed = revealedPasswords.has(user.user_id);
@@ -1072,7 +1122,47 @@ function AdminDashboard() {
                           display: "inline-block",
                         }}
                       />
-                      {isActive ? "Active" : "Blocked"}
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 8,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <span
+                      style={{
+                        padding: "3px 8px",
+                        borderRadius: 7,
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color:
+                          user.role === "admin"
+                            ? "#b91c1c"
+                            : user.role === "coordinator"
+                              ? "#854d0e"
+                              : "#166534",
+                        background:
+                          user.role === "admin"
+                            ? "#fee2e2"
+                            : user.role === "coordinator"
+                              ? "#fef9c3"
+                              : "#dcfce7",
+                      }}
+                    >
+                      {user.role?.toUpperCase() || "USER"}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: "#64748b",
+                        fontWeight: 500,
+                      }}
+                    >
+                      Dept: {user.department || "IT"}
                     </span>
                   </div>
 
@@ -1276,26 +1366,28 @@ function AdminDashboard() {
                 gap: 16,
               }}
             >
-              {[
-                {
-                  label: "Username",
-                  key: "username",
-                  type: "text",
-                  placeholder: "Username",
-                },
-                {
-                  label: "Email",
-                  key: "email",
-                  type: "email",
-                  placeholder: "Email address",
-                },
-                {
-                  label: "New Password",
-                  key: "password",
-                  type: "password",
-                  placeholder: "Leave blank to keep current",
-                },
-              ].map(({ label, key, type, placeholder }) => (
+              {(
+                [
+                  {
+                    label: "Username",
+                    key: "username",
+                    type: "text",
+                    placeholder: "Username",
+                  },
+                  {
+                    label: "Email",
+                    key: "email",
+                    type: "email",
+                    placeholder: "Email address",
+                  },
+                  {
+                    label: "New Password",
+                    key: "password",
+                    type: "password",
+                    placeholder: "Leave blank to keep current",
+                  },
+                ] as const
+              ).map(({ label, key, type, placeholder }) => (
                 <div key={key}>
                   <label
                     style={{
@@ -1312,7 +1404,7 @@ function AdminDashboard() {
                   </label>
                   <input
                     type={type}
-                    value={(formData as any)[key]}
+                    value={formData[key] || ""}
                     onChange={(e) =>
                       setFormData({ ...formData, [key]: e.target.value })
                     }
@@ -1321,6 +1413,56 @@ function AdminDashboard() {
                   />
                 </div>
               ))}
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 10.5,
+                    fontWeight: 600,
+                    color: "#64748b",
+                    marginBottom: 6,
+                    textTransform: "uppercase" as const,
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  Role
+                </label>
+                <select
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  style={inputStyle}
+                >
+                  <option value="user">User</option>
+                  <option value="coordinator">Coordinator</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 10.5,
+                    fontWeight: 600,
+                    color: "#64748b",
+                    marginBottom: 6,
+                    textTransform: "uppercase" as const,
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  Department
+                </label>
+                <select
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  style={inputStyle}
+                >
+                  <option value="IT">IT</option>
+                  <option value="Accounts">Accounts</option>
+                  <option value="Traffic">Traffic</option>
+                </select>
+              </div>
 
               <div>
                 <label
@@ -1345,14 +1487,14 @@ function AdminDashboard() {
                 >
                   {[
                     {
-                      value: "active",
+                      value: "active" as const,
                       label: "Active",
                       color: "#059669",
                       bg: "#d1fae5",
                       border: "#a7f3d0",
                     },
                     {
-                      value: "inactive",
+                      value: "inactive" as const,
                       label: "Blocked",
                       color: "#dc2626",
                       bg: "#fee2e2",
@@ -1364,7 +1506,7 @@ function AdminDashboard() {
                       <button
                         key={value}
                         onClick={() =>
-                          setFormData({ ...formData, activation_status: value })
+                          setFormData({ ...formData, activation_status: value as "active" | "inactive" })
                         }
                         style={{
                           display: "flex",
@@ -1595,6 +1737,62 @@ function AdminDashboard() {
                     {addUserErrors.email}
                   </p>
                 )}
+              </div>
+
+              {/* Department */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 10.5,
+                    fontWeight: 600,
+                    color: "#64748b",
+                    marginBottom: 6,
+                    textTransform: "uppercase" as const,
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  Department
+                </label>
+                <select
+                  value={addUserData.department}
+                  onChange={(e) => {
+                    setAddUserData({ ...addUserData, department: e.target.value });
+                  }}
+                  style={inputStyle}
+                >
+                  <option value="IT">IT</option>
+                  <option value="Accounts">Accounts</option>
+                  <option value="Traffic">Traffic</option>
+                </select>
+              </div>
+
+              {/* Role */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 10.5,
+                    fontWeight: 600,
+                    color: "#64748b",
+                    marginBottom: 6,
+                    textTransform: "uppercase" as const,
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  Role
+                </label>
+                <select
+                  value={addUserData.role}
+                  onChange={(e) => {
+                    setAddUserData({ ...addUserData, role: e.target.value });
+                  }}
+                  style={inputStyle}
+                >
+                  <option value="user">User</option>
+                  <option value="coordinator">Coordinator</option>
+                  <option value="admin">Admin</option>
+                </select>
               </div>
 
               {/* Password */}

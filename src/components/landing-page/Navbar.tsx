@@ -48,7 +48,7 @@ export default function Navbar() {
           {/* Desktop Menu - Hidden on Mobile */}
           <div className="hidden md:flex items-center space-x-6">
             {/* Assign Tasks (only for non-user roles) */}
-            {authenticated && userData?.data?.user_data?.role !== "user" && (
+            {authenticated && userData?.data?.user_data?.role !== "user" && userData?.data?.user_data?.role !== "coordinator" && (
               <Link
                 href="/user"
                 className="px-4 py-2 rounded-xl text-sm font-semibold text-white 

@@ -1,6 +1,6 @@
 import axios from "axios";
+import { axiosClient, getAuthHeaders } from "@/config/axios";
 import { ICreateTask } from "@/@types/interface/tasks.interfaces";
-import { getAuthHeaders } from "@/config/axios";
 // interface UpdateTaskBody {
 //   status: "pending" | "ongoing" | "complete";
 // }
@@ -14,8 +14,8 @@ import { getAuthHeaders } from "@/config/axios";
 export const createTask = async (body: ICreateTask) => {
   const token = localStorage.getItem("token");
   try {
-    const res = await axios.post(
-      "/api/tasks/createtask",
+    const res = await axiosClient.post(
+      "/tasks/create-task",
       body,
       getAuthHeaders(token as string),
     );
@@ -35,8 +35,8 @@ export const fetchTasks = async () => {
   try {
       const token = localStorage.getItem("token");
 
-    const res = await axios.get(
-      "/api/tasks/showtasks",
+    const res = await axiosClient.get(
+      "/tasks/fetch-task",
       getAuthHeaders(token as string),
     );
 
@@ -54,8 +54,8 @@ export const fetchTasks = async () => {
 export const updateTaskStatus = async (task_id: string, status: "pending" | "ongoing" | "complete") => {
   try {
     const token = localStorage.getItem("token");
-    const res = await axios.put(
-      `/api/tasks/updatetask/${task_id}`,
+    const res = await axiosClient.put(
+      `/tasks/update-task/${task_id}`,
       { status },
       getAuthHeaders(token as string),
     );
@@ -74,8 +74,8 @@ export const updateTaskStatus = async (task_id: string, status: "pending" | "ong
 export const deleteTask = async (task_id: string) => {
   try {
     const token = localStorage.getItem("token");
-    const res = await axios.delete(
-      `/api/tasks/deletetask/${task_id}`,
+    const res = await axiosClient.delete(
+      `/tasks/delete-task/${task_id}`,
       getAuthHeaders(token as string),
     );
 
@@ -92,7 +92,7 @@ export const deleteTask = async (task_id: string) => {
 export const fetchTaskStats = async () => {
   try {
     const token = localStorage.getItem("token");
-    const res = await axios.get("/api/tasks/stats", getAuthHeaders(token as string));
+    const res = await axiosClient.get("/tasks/stats", getAuthHeaders(token as string));
     return res.data;
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
@@ -105,8 +105,8 @@ export const fetchTaskStats = async () => {
 export const adminDeleteTask = async (targetUserId: string, taskId: string) => {
   try {
     const token = localStorage.getItem("token");
-    const res = await axios.delete(
-      `/api/admin/deletetask/${targetUserId}/${taskId}`,
+    const res = await axiosClient.delete(
+      `/admin/delete-task/${targetUserId}/${taskId}`,
       getAuthHeaders(token || "")
     );
     return res.data;

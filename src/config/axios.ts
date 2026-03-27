@@ -12,10 +12,10 @@ export const InvoiceaxiosClient: AxiosInstance = axios.create({
     "Content-Type": "application/json",
   },
 });
-export const getAuthHeaders = (token: string) => {
+export const getAuthHeaders = (token?: string | null) => {
   return {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: token ? `Bearer ${token}` : "",
     },
   };
 };

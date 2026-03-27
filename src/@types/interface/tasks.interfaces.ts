@@ -1,8 +1,12 @@
+import { Priority } from "../constant/priority.constant";
 import { TaskStatus } from "../constant/taskStatus.constant";
 
 export interface ICreateTask {
   title: string;
   description: string;
+  priority: Priority;
+  assigned_to?: string;
+  deadline?: string;
 }
 
 export interface ITask {
@@ -11,8 +15,12 @@ export interface ITask {
   title: string;
   description: string;
   status: TaskStatus;
+  priority: Priority;
   assigned_to_name?: string;
+  assigned_to_email?: string;
   assigned_by?: string;
+  assigned_by_id?: string;
+  assigned_by_email?: string;
   deadline?: string;
   created_at: string;
 }

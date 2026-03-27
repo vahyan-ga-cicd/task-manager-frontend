@@ -20,7 +20,7 @@ export interface UserData {
       tasks_count: number;
     };
     user_data: {
-      id: string;
+      user_id: string;
       username: string;
       email: string;
       role: string;

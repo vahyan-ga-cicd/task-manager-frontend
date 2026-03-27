@@ -1,15 +1,21 @@
 "use client";
 
+import { ICreateTask } from "@/@types/interface/tasks.interfaces";
+import { Priority } from "@/@types/constant/priority.constant";
 import { useAuthContext } from "@/context/AuthContext";
 import React, { useState, useEffect } from "react";
+
+interface User {
+  user_id: string;
+  username: string;
+  email: string;
+}
 
 interface AddTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddTask: (data: any) => void;
+  onAddTask: (data: ICreateTask) => void | Promise<void>;
 }
-
-type Priority = "Normal" | "Medium" | "High";
 
 export default function AddTaskModal({
   isOpen,
@@ -19,18 +25,21 @@ export default function AddTaskModal({
   const { fetchUser, userData } = useAuthContext();
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDescription, setNewTaskDescription] = useState("");
-  const [priority, setPriority] = useState<Priority>("Normal");
+  const [priority, setPriority] = useState<Priority>("Low");
   const [assignedTo, setAssignedTo] = useState("");
   const [deadline, setDeadline] = useState("");
-  const [usersList, setUsersList] = useState([]);
+  const [usersList, setUsersList] = useState<User[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isAdmin = userData?.data?.user_data?.role === "admin";
-  const currentUserId = userData?.data?.user_data?.id;
+  const isCoordinator = userData?.data?.user_data?.role === "coordinator";
+  const currentUserId = userData?.data?.user_data?.user_id;
+  
+  const isAssigningPossible = isAdmin || isCoordinator;
 
 
   useEffect(() => {
-    if (isOpen && isAdmin) {
+    if (isOpen && isAssigningPossible) {
       const loadUsers = async () => {
         const { getuserslist } = await import("@/utils/api/admin/admin");
         try {
@@ -42,7 +51,7 @@ export default function AddTaskModal({
       };
       loadUsers();
     }
-  }, [isOpen, isAdmin]);
+  }, [isOpen, isAssigningPossible]);
 
   if (!isOpen) return null;
   
@@ -53,7 +62,7 @@ export default function AddTaskModal({
   setIsSubmitting(true);
 
   try {
-    const taskData = isAdmin 
+    const taskData = isAssigningPossible 
       ? { title: newTaskTitle, description: newTaskDescription, assigned_to: assignedTo, deadline, priority }
       : { title: newTaskTitle, description: newTaskDescription, priority };
 
@@ -63,7 +72,7 @@ export default function AddTaskModal({
 
     setNewTaskTitle('');
     setNewTaskDescription('');
-    setPriority('Normal');
+    setPriority('Low');
     setAssignedTo('');
     setDeadline('');
     onClose();
@@ -142,7 +151,7 @@ export default function AddTaskModal({
               </label>
               <div className="flex gap-3">
                 {[
-                  { id: 'Normal', color: 'bg-blue-50 text-blue-600 border-blue-200 ring-blue-500', label: 'Normal' },
+                  { id: 'Low', color: 'bg-blue-50 text-blue-600 border-blue-200 ring-blue-500', label: 'Low' },
                   { id: 'Medium', color: 'bg-amber-50 text-amber-600 border-amber-200 ring-amber-500', label: 'Medium' },
                   { id: 'High', color: 'bg-red-50 text-black border-red-200 ring-red-500', label: 'High' }
                 ].map((p) => (
@@ -162,7 +171,7 @@ export default function AddTaskModal({
               </div>
             </div>
 
-            {isAdmin && (
+            {isAssigningPossible && (
               <>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -176,8 +185,8 @@ export default function AddTaskModal({
                   >
                     <option value="">Select Employee</option>
                     {usersList
-                      .filter((user: any) => user.user_id !== currentUserId)
-                      .map((user: any) => (
+                      .filter((user) => user.user_id !== currentUserId)
+                      .map((user) => (
                       <option key={user.user_id} value={user.user_id}>
                         {user.username} ({user.email})
                       </option>
