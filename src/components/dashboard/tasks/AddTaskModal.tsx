@@ -128,7 +128,7 @@ export default function AddTaskModal({
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all placeholder-gray-400 text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all placeholder-black text-black"
                 placeholder="e.g., Design homepage"
               />
             </div>
@@ -144,7 +144,7 @@ export default function AddTaskModal({
                 value={newTaskDescription}
                 onChange={(e) => setNewTaskDescription(e.target.value)}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none placeholder-gray-400 text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none placeholder-black text-black"
                 placeholder="Enter task details..."
               ></textarea>
             </div>

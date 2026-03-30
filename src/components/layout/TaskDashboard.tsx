@@ -66,6 +66,25 @@ const STATUS_CONFIG = {
   },
 };
 
+const PRIORITY_CONFIG = {
+  High: {
+    classes: "bg-rose-50 text-rose-700 ring-1 ring-rose-200",
+    dot: "bg-rose-500",
+  },
+  Medium: {
+    classes: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+    dot: "bg-amber-500",
+  },
+  Low: {
+    classes: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+    dot: "bg-emerald-500",
+  },
+  Normal: {
+    classes: "bg-slate-50 text-slate-700 ring-1 ring-slate-200",
+    dot: "bg-slate-500",
+  },
+};
+
 const TABS = [
   { key: "all", label: "All" },
   { key: "ongoing", label: "Ongoing" },
@@ -299,7 +318,7 @@ export default function TaskDashboard() {
   const [filter, setFilter] = useState<
     "all" | "completed" | "ongoing" | "pending" | "on-hold"
   >("all");
-  const [deptFilter, setDeptFilter] = useState("all");
+  const [deptByFilter, setDeptByFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [mounted, setMounted] = useState(false);
   const [lastKey, setlastKey] = useState<string | null>(null);
@@ -363,13 +382,13 @@ export default function TaskDashboard() {
     fetchTasks(lastKey, currentPage + 1);
   };
 
-const handlePrev = () => {
-  if (currentPage === 1) return;
+  const handlePrev = () => {
+    if (currentPage === 1) return;
 
-  const prevKey = lastKeyHistory[currentPage - 2] || null;
+    const prevKey = lastKeyHistory[currentPage - 2] || null;
 
-  fetchTasks(prevKey, currentPage - 1);
-};
+    fetchTasks(prevKey, currentPage - 1);
+  };
 
   const departments = useMemo(() => {
     const depts = new Set<string>(["IT", "Accounts", "Traffic"]);
@@ -545,10 +564,7 @@ const handlePrev = () => {
   const filtered = tasks
     .filter((t) => filter === "all" || normalizeStatus(t.status) === filter)
     .filter(
-      (t) =>
-        deptFilter === "all" ||
-        t.assigned_to_dept === deptFilter ||
-        t.assigned_by_dept === deptFilter,
+      (t) => deptByFilter === "all" || t.assigned_by_dept === deptByFilter,
     )
     .filter(
       (t) =>
@@ -587,7 +603,7 @@ const handlePrev = () => {
       `}</style>
 
       <div className="min-h-screen bg-[#f7f8fa] font-sans pb-20">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6 sm:space-y-8">
+        <div className="max-w-[1500px] mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6 sm:space-y-8">
           {/* ── Page Header ─────────────────────────────────────────────── */}
           {/* <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mt-15 sm:mt-10">
             <div>
@@ -1000,49 +1016,55 @@ const handlePrev = () => {
 
             <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-white">
-                <div className="flex justify-between overflow-x-auto pb-0.5 -mx-1 px-1 no-scrollbar">
-                  <div className=" flex">
-                    {TABS.map((tab) => {
-                      const count =
-                        tab.key === "all"
-                          ? tasks.length
-                          : tab.key === "ongoing"
-                            ? stats.counts.ongoing
-                            : tab.key === "pending"
-                              ? stats.counts.pending
-                              : tab.key === "on-hold"
-                                ? stats.counts["on-hold"]
-                                : stats.counts.completed;
-                      const active = filter === tab.key;
-                      return (
-                        <button
-                          key={tab.key}
-                          onClick={() => setFilter(tab.key as typeof filter)}
-                          className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0
-                          ${active ? "bg-gray-900 text-white shadow-lg shadow-gray-200" : "text-gray-500 hover:bg-gray-50"}`}
-                        >
-                          {tab.label}
-                          <span
-                            className={`text-[10px] px-1.5 py-0.5 rounded-full ${active ? "bg-white/20" : "bg-gray-100"}`}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="flex overflow-x-auto no-scrollbar -mx-4 px-4 sm:-mx-0 sm:px-0">
+                    <div className="flex p-0.5 bg-gray-50 rounded-xl">
+                      {TABS.map((tab) => {
+                        const count =
+                          tab.key === "all"
+                            ? tasks.length
+                            : tab.key === "ongoing"
+                              ? stats.counts.ongoing
+                              : tab.key === "pending"
+                                ? stats.counts.pending
+                                : tab.key === "on-hold"
+                                  ? stats.counts["on-hold"]
+                                  : stats.counts.completed;
+                        const active = filter === tab.key;
+                        return (
+                          <button
+                            key={tab.key}
+                            onClick={() => setFilter(tab.key as typeof filter)}
+                            className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0
+                            ${active ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                           >
-                            {count}
-                          </span>
-                        </button>
-                      );
-                    })}
+                            {tab.label}
+                            <span
+                              className={`text-[8.5px] px-1.5 py-0.5 rounded-full ${active ? "bg-gray-100 text-gray-900" : "bg-gray-200/50 text-gray-500"}`}
+                            >
+                              {count}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <select
-                    value={deptFilter}
-                    onChange={(e) => setDeptFilter(e.target.value)}
-                    className="px-3 py-1.5 text-xs font-bold rounded-xl border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all shadow-sm"
-                  >
-                    <option value="all">All Departments</option>
-                    {departments.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
+                  
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="flex items-center gap-2 bg-gray-50/80 border border-gray-100 rounded-xl px-2.5 py-1.5 shadow-sm min-w-[120px] max-w-fit">
+                      <span className="text-[8.5px] font-bold text-gray-400 uppercase tracking-tighter shrink-0">By Dept:</span>
+                      <select
+                        value={deptByFilter}
+                        onChange={(e) => setDeptByFilter(e.target.value)}
+                        className="bg-transparent text-[10.5px] font-bold text-gray-700 outline-none cursor-pointer w-full"
+                      >
+                        <option value="all">All Departments</option>
+                        {departments.map((d) => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1051,18 +1073,17 @@ const handlePrev = () => {
                 style={{ height: "480px" }}
               >
                 <table className="min-w-max w-full text-sm border-collapse">
-                  <thead className="sticky top-0 z-10 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
+                  <thead className="hidden md:table-header-group sticky top-0 z-10 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
                     <tr>
                       {[
-                        { label: "#", width: "w-16" },
+                        { label: "#", width: "w-8" },
                         { label: "Task Information", width: "" },
-                        { label: "Status", width: "w-32" },
-                        { label: "Priority", width: "w-32" },
-                        { label: "Assigned By", width: "w-56" },
-                        { label: "Assigned To", width: "w-56" },
-                        { label: "Verified", width: "w-48" },
-                        { label: "Deadline", width: "w-40" },
-                        { label: "Created", width: "w-40" },
+                        { label: "Status", width: "w-40" },
+                        { label: "Priority", width: "w-36" },
+                        { label: "Assigned By", width: "w-52" },
+                        { label: "Assigned To", width: "w-48" },
+                        { label: "Deadline", width: "w-36" },
+                        { label: "Created", width: "w-36" },
                       ].map((h, i) => (
                         <th
                           key={i}
@@ -1073,10 +1094,10 @@ const handlePrev = () => {
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50 text-xs">
+                  <tbody className="divide-y divide-gray-100/50 text-xs">
                     {filtered.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="py-24 text-center">
+                        <td colSpan={8} className="py-24 text-center">
                           <p className="text-sm text-gray-400 font-medium">
                             No results found for your query
                           </p>
@@ -1089,77 +1110,141 @@ const handlePrev = () => {
                         return (
                           <tr
                             key={task.task_id}
-                            className="hover:bg-blue-50/20 transition-colors"
+                            className="flex flex-col md:table-row hover:bg-slate-50/50 transition-colors bg-white md:bg-transparent mb-2.5 md:mb-0 rounded-2xl md:rounded-none border border-slate-100 md:border-none shadow-sm md:shadow-none overflow-hidden mx-3 sm:mx-4 md:mx-0 p-0.5 md:p-0"
                           >
-                            <td className="px-6 py-4 text-[10px] font-mono text-gray-300">
+                            {/* # Counter */}
+                            <td className="px-6 py-4 text-[10px] font-mono text-gray-300 md:table-cell hidden">
                               {String((currentPage - 1) * 10 + i + 1).padStart(
                                 2,
                                 "0",
                               )}
                             </td>
-                            <td className="px-6 py-4">
-                              <p className="font-bold text-gray-800">
-                                {task.title || "Untitled"}
-                              </p>
-                              {task.description && (
-                                <p className="text-[10px] text-gray-400 mt-1 line-clamp-1">
-                                  {task.description}
+
+                            {/* Task Information */}
+                            <td className="px-3.5 sm:px-6 py-3 md:table-cell bg-slate-50/30 md:bg-transparent">
+                              <div className="flex flex-col gap-0.5">
+                                <span className="md:hidden text-[8.5px] font-bold text-indigo-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                                  <span className="w-1 h-2.5 bg-indigo-400 rounded-full" />
+                                  Task Details
+                                </span>
+                                <p className="text-[10.5px] font-bold text-gray-900 line-clamp-1">
+                                  {task.title || "Untitled Task"}
                                 </p>
-                              )}
+                                <p className="text-[8.5px] text-gray-400 line-clamp-1">
+                                  {task.description ||
+                                    "No description provided"}
+                                </p>
+                              </div>
                             </td>
-                            <td className="px-6 py-4">
-                              <span
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider ${cfg.classes}`}
-                              >
+
+                            {/* Status (Includes Verification) */}
+                            <td className="px-3.5 sm:px-6 py-2 md:py-4 md:table-cell flex justify-between items-center md:block border-b border-gray-50 md:border-none">
+                              <span className="md:hidden text-[9px] font-bold text-slate-400 uppercase tracking-widest mr-2">
+                                Status
+                              </span>
+                              <div className="flex flex-col items-end md:items-start gap-1.5">
                                 <span
-                                  className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}
-                                />
-                                {cfg.label}
-                              </span>
+                                  className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${cfg.classes}`}
+                                >
+                                  <span
+                                    className={`w-1 h-1 rounded-full ${cfg.dot}`}
+                                  />
+                                  {cfg.label}
+                                </span>
+
+                                {task.verified_by_coordinator && (
+                                  <div className="flex flex-col items-end md:items-start">
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50/50 text-emerald-600 text-[8px] font-bold uppercase tracking-tight border border-emerald-100/50">
+                                      <svg
+                                        className="w-2 h-2"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                      Verified
+                                    </span>
+                                    {task.coordinator_comment && (
+                                      <p
+                                        className="text-[8px] text-slate-400 italic max-w-[120px] line-clamp-1 mt-0.5"
+                                        title={task.coordinator_comment}
+                                      >
+                                        &quot;{task.coordinator_comment}&quot;
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             </td>
-                            <td className="px-6 py-4">
-                              <span
-                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider
-                                ${
-                                  task.priority === "High"
-                                    ? "bg-red-100 text-red-700"
-                                    : task.priority === "Medium"
-                                      ? "bg-yellow-100 text-yellow-700"
-                                      : "bg-green-100 text-green-700"
-                                }`}
-                              >
-                                {task.priority || "Normal"}
+
+                            {/* Priority */}
+                            <td className="px-3.5 sm:px-6 py-2 md:py-4 md:table-cell flex justify-between items-center md:block border-b border-gray-50 md:border-none">
+                              <span className="md:hidden text-[9px] font-bold text-slate-400 uppercase tracking-widest mr-2">
+                                Priority
                               </span>
+                              {(() => {
+                                const p = (task?.priority ||
+                                  "Normal") as keyof typeof PRIORITY_CONFIG;
+                                const pCfg =
+                                  PRIORITY_CONFIG[p] || PRIORITY_CONFIG.Normal;
+                                return (
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 ${pCfg.classes}`}
+                                  >
+                                    <span
+                                      className={`w-1 h-1 rounded-full ${pCfg.dot}`}
+                                    />
+                                    {p}
+                                  </span>
+                                );
+                              })()}
                             </td>
-                            <td className="px-6 py-4">
+
+                            {/* Assigned By */}
+                            <td className="px-3.5 sm:px-6 py-2 md:py-4 md:table-cell flex justify-between items-center md:block border-b border-gray-50 md:border-none">
+                              <span className="md:hidden text-[9px] font-bold text-slate-400 uppercase tracking-widest mr-2">
+                                Assigned By
+                              </span>
                               <div className="flex items-center gap-2.5">
-                                <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-500 uppercase">
+                                <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-500 uppercase flex-shrink-0">
                                   {(task.assigned_by || "??").slice(0, 2)}
                                 </div>
-                                <div>
-                                  <div className="flex items-center gap-1.5">
+                                <div className="text-right md:text-left">
+                                  <div className="flex items-center md:justify-start justify-end gap-1.5">
                                     <p className="text-[11px] font-bold text-gray-700">
                                       {task.assigned_by || "Unknown"}
                                     </p>
                                     {task.assigned_by_role && (
-                                      <span className="px-1 py-0.5 rounded bg-gray-100 text-[8px] font-bold text-gray-500 uppercase leading-none">
+                                      <span className="px-1 py-0.5 rounded bg-slate-50 text-[8px] font-bold text-slate-400 uppercase leading-none border border-slate-100">
                                         {task.assigned_by_role}
                                       </span>
                                     )}
                                   </div>
-                                  <p className="text-[9px] text-gray-400">
-                                    {task.assigned_by_dept || "IT"}
+                                  <p 
+                                    onClick={() => setDeptByFilter(task.assigned_by_dept || "all")}
+                                    className="text-[9px] text-gray-400 uppercase tracking-tighter hover:text-blue-600 hover:underline cursor-pointer transition-colors"
+                                  >
+                                    {task.assigned_by_dept || "DEPT"}
                                   </p>
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4">
+
+                            {/* Assigned To */}
+                            <td className="px-3.5 sm:px-6 py-2 md:py-4 md:table-cell flex justify-between items-center md:block border-b border-gray-50 md:border-none">
+                              <span className="md:hidden text-[9px] font-bold text-slate-400 uppercase tracking-widest mr-2">
+                                Assigned To
+                              </span>
                               <div className="flex items-center gap-2.5">
-                                <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center text-[9px] font-bold text-blue-500 uppercase">
+                                <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center text-[9px] font-bold text-blue-500 uppercase flex-shrink-0">
                                   {(task.assigned_to_name || "??").slice(0, 2)}
                                 </div>
-                                <div>
-                                  <div className="flex items-center gap-1.5">
+                                <div className="text-right md:text-left">
+                                  <div className="flex items-center md:justify-start justify-end gap-1.5">
                                     <p className="text-[11px] font-bold text-gray-700">
                                       {task.assigned_to_name || "Unassigned"}
                                     </p>
@@ -1169,51 +1254,34 @@ const handlePrev = () => {
                                       </span>
                                     )}
                                   </div>
-                                  <p className="text-[9px] text-gray-400">
-                                    {task.assigned_to_dept || "IT"}
+                                  <p 
+                                    onClick={() => setDeptByFilter(task.assigned_to_dept || "all")}
+                                    className="text-[9px] text-gray-400 uppercase tracking-tighter hover:text-blue-600 hover:underline cursor-pointer transition-colors"
+                                  >
+                                    {task.assigned_to_dept || "DEPT"}
                                   </p>
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4">
-                              {task.verified_by_coordinator ? (
-                                <div className="space-y-1">
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[9px] font-bold uppercase tracking-wider border border-emerald-100">
-                                    <svg
-                                      className="w-2.5 h-2.5"
-                                      fill="currentColor"
-                                      viewBox="0 0 20 20"
-                                    >
-                                      <path
-                                        fillRule="evenodd"
-                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                        clipRule="evenodd"
-                                      />
-                                    </svg>
-                                    Verified By Coordinator
-                                  </span>
-                                  {task.coordinator_comment && (
-                                    <p
-                                      className="text-[9px] text-gray-400 italic line-clamp-1 max-w-[150px]"
-                                      title={task.coordinator_comment}
-                                    >
-                                      &quot;{task.coordinator_comment}&quot;
-                                    </p>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-[10px] text-gray-300">
-                                  —
-                                </span>
-                              )}
+
+                            {/* Deadline */}
+                            <td className="px-3.5 sm:px-6 py-2 md:py-4 md:table-cell flex justify-between items-center md:block border-b border-gray-50 md:border-none">
+                              <span className="md:hidden text-[9px] font-bold text-slate-400 uppercase tracking-widest mr-1">
+                                Deadline
+                              </span>
+                              <span className="text-[11px] text-gray-500 font-medium whitespace-nowrap">
+                                {task.deadline || "—"}
+                              </span>
                             </td>
-                            <td className="px-6 py-4 text-[11px] text-gray-500 font-medium whitespace-nowrap">
-                              {task.deadline || "—"}
-                            </td>
-                            <td className="px-6 py-4 text-[11px] text-gray-400 font-medium whitespace-nowrap">
-                              {task.created_at
-                                ? new Date(task.created_at).toLocaleDateString()
-                                : "—"}
+
+                            {/* Created */}
+                            <td className="px-3.5 sm:px-6 py-2 md:py-4 md:table-cell flex justify-between items-center md:block border-none">
+                              <span className="md:hidden text-[9px] font-bold text-slate-400 uppercase tracking-widest mr-2">
+                                Created
+                              </span>
+                              <span className="text-[11px] text-gray-900 font-bold whitespace-nowrap">
+                                {task.created_at?.split(" ")[0] || "—"}
+                              </span>
                             </td>
                           </tr>
                         );

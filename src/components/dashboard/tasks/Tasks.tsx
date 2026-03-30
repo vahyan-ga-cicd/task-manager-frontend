@@ -19,8 +19,6 @@ import {
   ChevronDown,
 } from "lucide-react";
 import {
-  createTask,
-  // deleteTask,
   updateTaskStatus,
   fetchTaskStats,
   adminDeleteTask,
@@ -28,7 +26,6 @@ import {
 import {
   fetchAdminStats,
   assigntask,
-  adminUpdateTask,
 } from "@/utils/api/admin/admin";
 import Stats from "../stats/Stats";
 
@@ -70,6 +67,24 @@ export default function Tasks() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Status Action Modal States
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [actionModalConfig, setActionModalConfig] = useState<{
+    title: string;
+    placeholder: string;
+    confirmText: string;
+    targetStatus: "complete" | "on-hold";
+    task: ITask | null;
+  }>({
+    title: "",
+    placeholder: "",
+    confirmText: "",
+    targetStatus: "on-hold",
+    task: null,
+  });
+  const [actionComment, setActionComment] = useState("");
+  const [isActionSubmitting, setIsActionSubmitting] = useState(false);
+
   const isAdmin = userData?.data?.user_data?.role === "admin";
   const isCoordinator = userData?.data?.user_data?.role === "coordinator";
   const isNormalUser = !isAdmin && !isCoordinator;
@@ -93,17 +108,15 @@ export default function Tasks() {
   }, [tasks, view, isCoordinator, currentUserId]);
 
   const calculatedStats = useMemo(() => {
-    const s = {
+    return {
       total: displayTasks.length,
       pending: displayTasks.filter((t) => t.status === "pending").length,
       ongoing: displayTasks.filter((t) => t.status === "ongoing").length,
       complete: displayTasks.filter((t) => t.status === "complete").length,
       "on-hold": displayTasks.filter((t) => t.status === "on-hold").length,
     };
-    return s;
   }, [displayTasks]);
 
-  // High Priority Tasks for warning bar
   const highPriorityTasks = useMemo(() => {
     if (isNormalUser) {
       return tasks.filter(
@@ -111,7 +124,6 @@ export default function Tasks() {
       );
     }
     if (isCoordinator) {
-      // Show high priority tasks assigned TO the coordinator, regardless of view
       return tasks.filter(
         (t) =>
           t.user_id === currentUserId &&
@@ -130,7 +142,6 @@ export default function Tasks() {
         } else {
           await fetchTaskStats();
         }
-        // Even if we fetch, we are using calculatedStats for primary UI
       } catch (error) {
         console.error("Failed to fetch stats:", error);
       }
@@ -140,10 +151,7 @@ export default function Tasks() {
 
   const handleUpdateTask = async (task: ITask, updates: Partial<ITask>) => {
     try {
-      
       if (updates.status === "ongoing") {
-        const isSelf = task.user_id === currentUserId;
-
         const alreadyOngoing = tasks.some(
           (t) =>
             t.status === "ongoing" &&
@@ -153,7 +161,7 @@ export default function Tasks() {
 
         if (alreadyOngoing) {
           setErrorMsg(
-            isSelf
+            task.user_id === currentUserId
               ? "You can do one task at a time"
               : "This user already has an ongoing task",
           );
@@ -161,39 +169,24 @@ export default function Tasks() {
         }
       }
 
- 
-      if (updates.status === "on-hold") {
-        const reason = window.prompt(
-          "Why do you want to put this task on hold?",
-          task.on_hold_reason || "",
-        );
+      const isForceComplete =
+        isCoordinator && updates.status === "complete" && view !== "assigned_to_me";
 
-        if (!reason || reason.trim() === "") return;
-
-        updates.on_hold_reason = reason;
+      if (updates.status === "on-hold" || isForceComplete) {
+        setActionModalConfig({
+          task,
+          targetStatus: updates.status as "complete" | "on-hold",
+          title: isForceComplete ? "Force Complete Task" : "Put Task On Hold",
+          placeholder: isForceComplete
+            ? "Enter reason for force completing this task..."
+            : "Why do you want to put this task on hold?",
+          confirmText: isForceComplete ? "Force Complete" : "Confirm On-Hold",
+        });
+        setActionComment(task.on_hold_reason || "");
+        setIsActionModalOpen(true);
+        return;
       }
 
-      
-      if (
-        isCoordinator &&
-        updates.status === "complete" &&
-        view !== "assigned_to_me"
-      ) {
-        const comment = window.prompt(
-          "Enter reason for force completing this task:",
-        );
-
-        
-        if (!comment || comment.trim() === "") {
-          setErrorMsg("Comment is required to complete task");
-          return;
-        }
-
-        updates.verified_by_coordinator = true;
-        updates.coordinator_comment = comment;
-      }
-
-      
       if (updates.status) {
         await updateTaskStatus(
           task.user_id,
@@ -203,24 +196,45 @@ export default function Tasks() {
           updates.verified_by_coordinator,
           updates.coordinator_comment,
         );
-      } else {
-        console.warn("Non-admin users can only update task status.");
       }
-
-    
       await getTasks();
       await fetchUser();
     } catch (error: unknown) {
-      const err = error as Error;
-      console.error("Failed to update task:", err);
+      console.error("Failed to update task:", error);
+      setErrorMsg((error as Error).message || "Operation failed");
+    }
+  };
 
-      if (err.message.toLowerCase().includes("ongoing")) {
-        setErrorMsg("You can do one task at a time");
-      } else {
-        setErrorMsg(err.message || "Operation failed");
-      }
+  const handleActionModalConfirm = async () => {
+    if (!actionComment.trim()) {
+      setErrorMsg("Please provide a reason/comment");
+      return;
+    }
+
+    const { task, targetStatus } = actionModalConfig;
+    if (!task) return;
+
+    setIsActionSubmitting(true);
+    try {
+      const isForceComplete = targetStatus === "complete";
+      
+      await updateTaskStatus(
+        task.user_id,
+        task.task_id,
+        targetStatus,
+        !isForceComplete ? actionComment : undefined,
+        isForceComplete ? true : undefined,
+        isForceComplete ? actionComment : undefined,
+      );
 
       await getTasks();
+      await fetchUser();
+      setIsActionModalOpen(false);
+      setActionComment("");
+    } catch (error: unknown) {
+      setErrorMsg((error as Error).message || "Action failed");
+    } finally {
+      setIsActionSubmitting(false);
     }
   };
 
@@ -228,7 +242,6 @@ export default function Tasks() {
     setDeletingId(taskId);
     try {
       if (isAdmin || isCoordinator) await adminDeleteTask(targetUserId, taskId);
-      
       await getTasks();
       await fetchUser();
     } catch (error) {
@@ -243,10 +256,6 @@ export default function Tasks() {
       if (isAdmin || isCoordinator) {
         await assigntask(data);
       }
-
-      // else {
-      //   await createTask(data);
-      // }
       await getTasks();
       setIsModalOpen(false);
     } catch (error) {
@@ -266,113 +275,29 @@ export default function Tasks() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
         .tasks-root { font-family: 'Sora', sans-serif; }
-
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .task-card { animation: fadeUp 0.3s ease both; }
-        .task-card:nth-child(1)   { animation-delay: 0.04s; }
-        .task-card:nth-child(2)   { animation-delay: 0.08s; }
-        .task-card:nth-child(3)   { animation-delay: 0.12s; }
-        .task-card:nth-child(4)   { animation-delay: 0.16s; }
-        .task-card:nth-child(5)   { animation-delay: 0.20s; }
-        .task-card:nth-child(n+6) { animation-delay: 0.24s; }
-
-        .task-card {
-          transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
-        }
-        .task-card:hover {
-          box-shadow: 0 6px 24px rgba(99,102,241,0.10);
-          border-color: #a5b4fc !important;
-          transform: translateY(-2px);
-        }
-
-        .delete-btn { transition: color 0.15s, transform 0.15s; }
-        .delete-btn:hover { color: #e11d48; transform: scale(1.18); }
-
-        .error-banner { animation: slideDown 0.25s ease; }
-
-        .priority-left-bar-High   { border-left: 3px solid #f87171; }
+        .task-card { animation: fadeUp 0.3s ease both; transition: all 0.2s ease; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .task-card:hover { box-shadow: 0 6px 24px rgba(99,102,241,0.10); border-color: #a5b4fc !important; transform: translateY(-2px); }
+        .priority-left-bar-High { border-left: 3px solid #f87171; }
         .priority-left-bar-Medium { border-left: 3px solid #fb923c; }
-        .priority-left-bar-Low    { border-left: 3px solid #cbd5e1; }
-        
-        .high-priority-alert {
-          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-          animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
+        .priority-left-bar-Low { border-left: 3px solid #cbd5e1; }
       `}</style>
 
       <div className="tasks-root w-full max-w-5xl mx-auto space-y-6">
-        {/* High Priority Warning Bar */}
         {highPriorityTasks.length > 0 && (
-          <div className="rounded-2xl overflow-hidden border border-red-200 shadow-md shadow-red-100/50">
-            {/* Top severity strip */}
+          <div className="rounded-2xl overflow-hidden border border-red-200 shadow-md">
             <div className="bg-red-600 px-5 py-1.5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-red-100">
-                  Priority Alert · Action Required
-                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-red-100">Priority Alert</span>
               </div>
-              <span className="text-[10px] font-bold text-red-200 tracking-wider uppercase">
-                HIGH
-              </span>
             </div>
-
-            {/* Main body */}
             <div className="bg-red-50 px-5 py-4 flex items-start justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="mt-0.5 flex-shrink-0 w-9 h-9 rounded-xl bg-red-100 border border-red-200 flex items-center justify-center">
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-red-900 leading-snug">
-                    {highPriorityTasks.length} High Priority Task
-                    {highPriorityTasks.length > 1 ? "s" : ""} Require
-                    {highPriorityTasks.length === 1 ? "s" : ""} Attention
-                  </p>
-                  <p className="text-xs text-red-600 mt-1 leading-relaxed font-medium">
-                    {highPriorityTasks.map((t) => t.title).join(" · ")}
-                  </p>
-                </div>
+              <div>
+                <p className="text-sm font-bold text-red-900">{highPriorityTasks.length} High Priority Tasks Need Attention</p>
+                <p className="text-xs text-red-600 truncate">{highPriorityTasks.map(t => t.title).join(" · ")}</p>
               </div>
-              <div className="flex-shrink-0 mt-0.5">
-                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-600 text-white text-sm font-extrabold shadow-sm">
-                  {highPriorityTasks.length}
-                </span>
-              </div>
-            </div>
-
-            {/* Bottom task pills row */}
-            <div className="bg-white border-t border-red-100 px-5 py-2.5 flex flex-wrap gap-2">
-              {highPriorityTasks.map((t) => (
-                <span
-                  key={t.task_id}
-                  className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md border ${
-                    t.status === "complete"
-                      ? "bg-green-50 text-green-700 border-green-200"
-                      : "bg-red-50 text-red-700 border-red-200"
-                  }`}
-                >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                      t.status === "complete" ? "bg-green-500" : "bg-red-500"
-                    }`}
-                  />
-                  {t.title}
-                  {t.status === "complete" && (
-                    <span className="text-[9px] uppercase tracking-wider text-green-600 font-bold ml-0.5">
-                      ✓ Done
-                    </span>
-                  )}
-                </span>
-              ))}
+              <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-lg">{highPriorityTasks.length}</span>
             </div>
           </div>
         )}
@@ -380,329 +305,147 @@ export default function Tasks() {
         <Stats stats={calculatedStats} />
 
         {errorMsg && (
-          <div className="text-black error-banner flex items-start gap-3 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3">
-            <AlertCircle className="h-4 w-4 text-rose-500 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-rose-700 font-medium flex-1">
-              {errorMsg}
-            </p>
-            <button
-              onClick={() => setErrorMsg(null)}
-              className="text-rose-400 hover:text-rose-600 transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
+          <div className="flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-rose-700 text-sm">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <p className="flex-1 font-medium">{errorMsg}</p>
+            <button onClick={() => setErrorMsg(null)}><X className="h-4 w-4" /></button>
           </div>
         )}
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-indigo-50/40">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-slate-50/50">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center">
                 <ListChecks className="h-5 w-5 text-indigo-600" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-gray-900 leading-tight">
-                  {isAdmin
-                    ? "All Tasks"
-                    : isCoordinator
-                      ? view === "assigned_by_me"
-                        ? "Tasks You Created"
-                        : "Tasks Assigned To You"
-                      : "Your Tasks"}
+                <h3 className="text-base font-bold text-gray-900">
+                  {isAdmin ? "All Tasks" : isCoordinator ? (view === "assigned_by_me" ? "Tasks You Created" : "Tasks Assigned To You") : "Your Tasks"}
                 </h3>
-                <p className="text-[11px] text-gray-400 font-medium mt-0.5">
-                  {displayTasks.length} task
-                  {displayTasks.length !== 1 ? "s" : ""}{" "}
-                  {view === "all" ? "total" : "in this view"}
-                </p>
               </div>
             </div>
             {(isAdmin || isCoordinator) && (
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all active:scale-95 shadow-sm shadow-indigo-200"
+                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all shadow-sm"
               >
-                <Plus className="h-4 w-4" />
-                Assign Task
+                <Plus className="h-4 w-4" /> Assign Task
               </button>
             )}
           </div>
 
-          {/* Coordinator Switcher */}
           {isCoordinator && (
             <div className="px-6 py-2 border-b border-gray-100 bg-gray-50 flex gap-2">
-              <button
-                onClick={() => setView("all")}
-                className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${view === "all" ? "bg-indigo-600 text-white" : "bg-white text-gray-500 border border-gray-200"}`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setView("assigned_by_me")}
-                className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${view === "assigned_by_me" ? "bg-indigo-600 text-white" : "bg-white text-gray-500 border border-gray-200"}`}
-              >
-                Your Tasks
-              </button>
-              <button
-                onClick={() => setView("assigned_to_me")}
-                className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${view === "assigned_to_me" ? "bg-indigo-600 text-white" : "bg-white text-gray-500 border border-gray-200"}`}
-              >
-                Assigned Tasks
-              </button>
+              {(["all", "assigned_by_me", "assigned_to_me"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${view === v ? "bg-indigo-600 text-white" : "bg-white text-gray-500 border border-gray-200"}`}
+                >
+                  {v === "assigned_by_me" ? "Created" : v === "assigned_to_me" ? "Assigned" : "All"}
+                </button>
+              ))}
             </div>
           )}
 
-          {/* Task List */}
           <div className="p-5 space-y-3">
             {displayTasks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="w-16 h-16 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex items-center justify-center mb-4">
-                  <ListChecks className="h-7 w-7 text-gray-300" />
-                </div>
-                <p className="text-gray-600 font-semibold text-sm">
-                  No tasks yet
-                </p>
-                <p className="text-gray-400 text-xs mt-1">
-                  {isAdmin
-                    ? "Assign a task to get started."
-                    : "Tasks assigned to you will appear here."}
-                </p>
+              <div className="py-20 text-center text-gray-400">
+                <ListChecks className="h-10 w-10 mx-auto opacity-20 mb-2" />
+                <p className="text-sm font-medium">No tasks found</p>
               </div>
             ) : (
-              displayTasks.map((task: ITask) => {
+              displayTasks.map((task) => {
                 const priority = (task.priority ?? "Low") as Priority;
                 const isAssignedByMe = task.assigned_by_id === currentUserId;
                 const isAssignedToMe = task.user_id === currentUserId;
 
-                const canDelete =
-                  isAdmin ||
-                  (isCoordinator && isAssignedByMe && !isAssignedToMe);
-                const canUpdateStatus =
-                  !task.verified_by_coordinator &&
-                  ((isNormalUser && task.status !== "complete") ||
-                    // Coordinator rules
-                    (isCoordinator &&
-                      task.status !== "complete" &&
-                      (isAssignedToMe || // his own task
-                        isAssignedByMe))); // tasks he assigned
+                const canDelete = isAdmin || (isCoordinator && isAssignedByMe && !isAssignedToMe);
+                const canUpdateStatus = !task.verified_by_coordinator && (!task.status.includes("complete") && (isNormalUser || isAssignedToMe || isAssignedByMe));
+
                 return (
-                  <div
-                    key={task.task_id}
-                    className={`task-card group relative bg-white rounded-xl overflow-hidden priority-left-bar-${priority}`}
-                    style={{ border: "1px solid #e5e7eb" }}
-                  >
-                    <div className="p-5">
-                      {/* Row 1: Title + delete */}
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-bold text-gray-900 leading-snug truncate">
-                            {task.title}
-                          </h4>
-                          {task.description && (
-                            <p className="text-xs text-gray-500 mt-1 leading-relaxed line-clamp-2">
-                              {task.description}
-                            </p>
-                          )}
-                        </div>
-                        {canDelete && (
-                          <button
-                            onClick={() =>
-                              handleDelete(task.user_id, task.task_id)
-                            }
-                            disabled={deletingId === task.task_id}
-                            className="delete-btn flex-shrink-0 opacity-0 group-hover:opacity-100 text-gray-300 disabled:opacity-50 mt-0.5"
-                            title="Delete task"
-                          >
-                            {deletingId === task.task_id ? (
-                              <Loader2 className="h-4 w-4 animate-spin text-rose-400" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
-                          </button>
-                        )}
+                  <div key={task.task_id} className={`task-card group bg-white rounded-xl border border-gray-100 p-4 priority-left-bar-${priority}`}>
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-bold text-gray-900 truncate">{task.title}</h4>
+                        {task.description && <p className="text-xs text-gray-500 mt-1 line-clamp-1">{task.description}</p>}
                       </div>
+                      {canDelete && (
+                        <button onClick={() => handleDelete(task.user_id, task.task_id)} className="text-gray-300 hover:text-red-500 transition-colors shrink-0">
+                          {deletingId === task.task_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        </button>
+                      )}
+                    </div>
 
-                      {/* Row 2: Assignee + Deadline */}
-                      <div className="text-black flex flex-wrap gap-2 mt-3">
-                        <div className="inline-flex items-center gap-1.5 bg-violet-50 border border-violet-100 text-violet-700 px-3 py-1.5 rounded-lg text-xs font-medium">
-                          {isAdmin ? (
-                            <ShieldCheck className="h-3.5 w-3.5 opacity-70 flex-shrink-0" />
-                          ) : (
-                            <User className="h-3.5 w-3.5 opacity-70 flex-shrink-0" />
-                          )}
-                          <span className="text-violet-500">
-                            {isAdmin || (isCoordinator && isAssignedByMe)
-                              ? "To:"
-                              : "By:"}
-                          </span>
-                          <div className="flex flex-col leading-tight">
-                            <span className="font-semibold text-violet-800">
-                              {isAdmin || (isCoordinator && isAssignedByMe)
-                                ? task.assigned_to_name
-                                : task.assigned_by}
-                            </span>
-                            <span className="text-[10px] text-violet-400 font-mono">
-                              {isAdmin || (isCoordinator && isAssignedByMe)
-                                ? task.assigned_to_email
-                                : task.assigned_by_email}
-                            </span>
-                          </div>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5 bg-violet-50 text-violet-700 px-2 py-1 rounded-lg text-[10px] font-bold w-fit">
+                          <User className="h-3 w-3" />
+                          <span>{isAssignedByMe ? `To: ${task.assigned_to_name}` : `By: ${task.assigned_by}`}</span>
                         </div>
-
-                        <div className="text-black flex justify-center items-center items-center gap-1.5 bg-rose-50 border border-rose-100 text-rose-600 px-3 py-1.5 rounded-lg text-xs font-medium">
-                          <CalendarDays className="h-3.5 w-3.5 opacity-70 flex-shrink-0" />
-                          <span className="text-rose-400 mr-2">Deadline:</span>
-                          <span className="font-semibold font-mono text-rose-700">
-                            {task.deadline
-                              ? new Date(task.deadline).toLocaleDateString(
-                                  "en-GB",
-                                  {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric",
-                                  },
-                                )
-                              : "—"}
-                          </span>
-                        </div>
+                        {isAssignedByMe ? 
+                          task.assigned_to_email && <span className="text-[9px] text-gray-400 ml-1 leading-none">{task.assigned_to_email}</span> :
+                          task.assigned_by_email && <span className="text-[9px] text-gray-400 ml-1 leading-none">{task.assigned_by_email}</span>
+                        }
                       </div>
-
-                      {/* Row 3: Controls + Timestamp */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-3.5 border-t border-gray-100">
-                        <div className="flex flex-wrap items-center gap-3">
-                          {/* Status */}
-                          <div className="flex flex-col gap-2">
-                            <div className=" flex items-center gap-2">
-                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">
-                                Status
-                              </span>
-
-                              {canUpdateStatus ? (
-                                <StyledSelect
-                                  value={task.status}
-                                  onChange={(v) =>
-                                    handleUpdateTask(task, { status: v })
-                                  }
-                                  options={
-                                    isCoordinator && !isAssignedToMe
-                                      ? [
-                                          {
-                                            value: task.status,
-                                            label: task.status,
-                                          },
-                                          {
-                                            value: "complete",
-                                            label: "Complete",
-                                          },
-                                        ]
-                                      : [
-                                          {
-                                            value: "pending",
-                                            label: "Pending",
-                                          },
-                                          {
-                                            value: "ongoing",
-                                            label: "Ongoing",
-                                          },
-                                          {
-                                            value: "complete",
-                                            label: "Complete",
-                                          },
-                                          {
-                                            value: "on-hold",
-                                            label: "On-hold",
-                                          },
-                                        ]
-                                  }
-                                  colorMap={statusColorMap}
-                                />
-                              ) : (
-                                <span
-                                  className={`px-2 py-[2px] rounded text-[10px] font-bold uppercase text-black ${
-                                    task.status === "pending"
-                                      ? "bg-gray-200"
-                                      : task.status === "ongoing"
-                                        ? "bg-blue-200"
-                                        : task.status === "complete"
-                                          ? "bg-green-200"
-                                          : task.status === "on-hold"
-                                            ? "bg-yellow-200"
-                                            : "bg-gray-200"
-                                  }`}
-                                >
-                                  {task.status}
-                                </span>
-                              )}
-                            </div>
-                            {task.status === "on-hold" &&
-                              task.on_hold_reason && (
-                                <div className="p-2 bg-amber-50 border border-amber-100 rounded-lg text-[10px] text-amber-800 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
-                                  <span className="font-bold uppercase mr-1">
-                                    Reason:
-                                  </span>
-                                  {task.on_hold_reason}
-                                </div>
-                              )}
-
-                            {task.verified_by_coordinator &&
-                              task.coordinator_comment && (
-                                <div className="p-2 bg-emerald-50 border border-emerald-100 rounded-lg text-[10px] text-emerald-800 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
-                                  <span className="font-bold uppercase mr-1">
-                                    Force Completed (Coordinator):
-                                  </span>
-                                  {task.coordinator_comment}
-                                </div>
-                              )}
-                          </div>
-
-                          <div className="w-px h-5 bg-gray-200 hidden sm:block" />
-
-                          {/* Priority */}
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center text-[10px] font-bold uppercase tracking-widest">
-                              <span
-                                className={`text-[10px] font-bold uppercase tracking-widest whitespace-nowrap
-                                  ${
-                                    task?.priority === "High"
-                                      ? "text-red-500"
-                                      : task?.priority === "Medium"
-                                        ? "text-yellow-500"
-                                        : task?.priority === "Low"
-                                          ? "text-green-500"
-                                          : "text-gray-400"
-                                  }
-                                `}
-                              >
-                                Priority : {task?.priority}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Created timestamp */}
-                        <span className="text-[10px] text-gray-400 font-mono bg-gray-50 border border-gray-100 px-2.5 py-1 rounded-lg whitespace-nowrap">
-                          Created at{" "}
-                          {new Date(task.created_at).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            },
-                          )}
-                          {" · "}
-                          {new Date(task.created_at).toLocaleTimeString(
-                            "en-US",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            },
-                          )}
-                        </span>
+                      <div className="flex items-center gap-1.5 bg-rose-50 text-rose-700 px-2 py-1 rounded-lg text-[10px] font-bold h-fit">
+                        <CalendarDays className="h-3 w-3" />
+                        <span>{task.deadline ? new Date(task.deadline).toLocaleDateString() : "No Deadline"}</span>
                       </div>
                     </div>
+
+                    <div className="flex items-center justify-between gap-4 mt-4 pt-3 border-t border-gray-50">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase">Status</span>
+                          {canUpdateStatus ? (
+                            isCoordinator && !isAssignedToMe ? (
+                              <div className="flex items-center gap-3">
+                                <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase border ${statusColorMap[task.status]}`}>{task.status}</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-bold text-gray-400">Force:</span>
+                                  <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-full border border-gray-200">
+                                    <button
+                                      onClick={() => {}} 
+                                      className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold transition-all ${task.status !== 'complete' ? 'bg-white shadow-sm text-gray-600' : 'text-gray-400 hover:text-gray-600'}`}
+                                    >
+                                      N
+                                    </button>
+                                    <button
+                                      onClick={() => handleUpdateTask(task, { status: "complete" })}
+                                      className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold transition-all ${task.status === 'complete' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-indigo-600'}`}
+                                    >
+                                      Y
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <StyledSelect
+                                value={task.status}
+                                onChange={(v) => handleUpdateTask(task, { status: v })}
+                                options={[{value:"pending", label:"Pending"},{value:"ongoing", label:"Ongoing"},{value:"complete", label:"Complete"},{value:"on-hold", label:"On-hold"}]}
+                                colorMap={statusColorMap}
+                              />
+                            )
+                          ) : (
+                            <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase border ${statusColorMap[task.status]}`}>{task.status}</span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-gray-400 font-mono">Created: {new Date(task.created_at).toLocaleDateString()}</span>
+                    </div>
+
+                    {(task.status === "on-hold" && task.on_hold_reason) && (
+                      <div className="mt-2 p-2 bg-amber-50 text-[10px] text-amber-800 rounded-lg border border-amber-100 italic">
+                        On-Hold Reason: {task.on_hold_reason}
+                      </div>
+                    )}
+                    {task.verified_by_coordinator && task.coordinator_comment && (
+                      <div className="mt-2 p-2 bg-emerald-50 text-[10px] text-emerald-800 rounded-lg border border-emerald-100 italic">
+                        Verified: {task.coordinator_comment}
+                      </div>
+                    )}
                   </div>
                 );
               })
@@ -710,12 +453,40 @@ export default function Tasks() {
           </div>
         </div>
 
-        {(isAdmin || isCoordinator) && (
-          <AddTaskModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onAddTask={handleAddTask}
-          />
+        <AddTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onAddTask={handleAddTask} />
+
+        {isActionModalOpen && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+              <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className={`h-5 w-5 ${actionModalConfig.targetStatus === "complete" ? "text-green-600" : "text-orange-600"}`} />
+                  <h3 className="text-lg font-bold text-gray-900">{actionModalConfig.title}</h3>
+                </div>
+                <button onClick={() => setIsActionModalOpen(false)} className="text-gray-400 hover:text-gray-600 bg-gray-100 p-1.5 rounded-xl transition-all"><X className="h-5 w-5" /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <textarea
+                  value={actionComment}
+                  onChange={(e) => setActionComment(e.target.value)}
+                  rows={4}
+                  autoFocus
+                  placeholder={actionModalConfig.placeholder}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none text-sm placeholder-black text-black"
+                />
+                <div className="flex gap-3">
+                  <button onClick={() => setIsActionModalOpen(false)} className="flex-1 px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl font-bold text-sm">Cancel</button>
+                  <button
+                    onClick={handleActionModalConfirm}
+                    disabled={isActionSubmitting || !actionComment.trim()}
+                    className={`flex-1 px-5 py-2.5 text-white rounded-xl font-bold text-sm shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 ${actionModalConfig.targetStatus === "complete" ? "bg-indigo-600" : "bg-orange-500"}`}
+                  >
+                    {isActionSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : actionModalConfig.confirmText}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </>
