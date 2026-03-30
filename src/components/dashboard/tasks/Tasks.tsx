@@ -25,7 +25,11 @@ import {
   fetchTaskStats,
   adminDeleteTask,
 } from "@/utils/api/tasksApi";
-import {fetchAdminStats,assigntask,adminUpdateTask}  from "@/utils/api/admin/admin"; 
+import {
+  fetchAdminStats,
+  assigntask,
+  adminUpdateTask,
+} from "@/utils/api/admin/admin";
 import Stats from "../stats/Stats";
 
 function StyledSelect<T extends string>({
@@ -72,23 +76,29 @@ export default function Tasks() {
   const currentUserId = userData?.data?.user_data?.user_id;
 
   const { tasks, getTasks } = useTasks(userData?.data?.user_data?.role);
-  
-  const [view, setView] = useState<"all" | "assigned_to_me" | "assigned_by_me">("all");
+
+  const [view, setView] = useState<"all" | "assigned_to_me" | "assigned_by_me">(
+    "all",
+  );
 
   const displayTasks = useMemo(() => {
     if (!isCoordinator) return tasks;
-    if (view === "assigned_by_me") return tasks.filter(t => t.assigned_by_id === currentUserId);
-    if (view === "assigned_to_me") return tasks.filter(t => t.user_id === currentUserId);
+    if (view === "assigned_by_me")
+      return tasks.filter(
+        (t) => t.assigned_by_id === currentUserId && t.user_id !== currentUserId,
+      );
+    if (view === "assigned_to_me")
+      return tasks.filter((t) => t.user_id === currentUserId);
     return tasks;
   }, [tasks, view, isCoordinator, currentUserId]);
 
   const calculatedStats = useMemo(() => {
     const s = {
       total: displayTasks.length,
-      pending: displayTasks.filter(t => t.status === "pending").length,
-      ongoing: displayTasks.filter(t => t.status === "ongoing").length,
-      complete: displayTasks.filter(t => t.status === "complete").length,
-      "on-hold": displayTasks.filter(t => t.status === "on-hold").length,
+      pending: displayTasks.filter((t) => t.status === "pending").length,
+      ongoing: displayTasks.filter((t) => t.status === "ongoing").length,
+      complete: displayTasks.filter((t) => t.status === "complete").length,
+      "on-hold": displayTasks.filter((t) => t.status === "on-hold").length,
     };
     return s;
   }, [displayTasks]);
@@ -96,11 +106,18 @@ export default function Tasks() {
   // High Priority Tasks for warning bar
   const highPriorityTasks = useMemo(() => {
     if (isNormalUser) {
-      return tasks.filter(t => t.priority === "High" && t.status !== "complete");
+      return tasks.filter(
+        (t) => t.priority === "High" && t.status !== "complete",
+      );
     }
     if (isCoordinator) {
       // Show high priority tasks assigned TO the coordinator, regardless of view
-      return tasks.filter(t => t.user_id === currentUserId && t.priority === "High" && t.status !== "complete");
+      return tasks.filter(
+        (t) =>
+          t.user_id === currentUserId &&
+          t.priority === "High" &&
+          t.status !== "complete",
+      );
     }
     return [];
   }, [tasks, isNormalUser, isCoordinator, currentUserId]);
@@ -123,50 +140,86 @@ export default function Tasks() {
 
   const handleUpdateTask = async (task: ITask, updates: Partial<ITask>) => {
     try {
+      
       if (updates.status === "ongoing") {
-        // Check if the assignee already has an ongoing task
         const isSelf = task.user_id === currentUserId;
+
         const alreadyOngoing = tasks.some(
-          (t) => t.status === "ongoing" && t.user_id === task.user_id && t.task_id !== task.task_id
+          (t) =>
+            t.status === "ongoing" &&
+            t.user_id === task.user_id &&
+            t.task_id !== task.task_id,
         );
 
         if (alreadyOngoing) {
-          setErrorMsg(isSelf ? "You can do one task at a time" : "This user already has an ongoing task");
+          setErrorMsg(
+            isSelf
+              ? "You can do one task at a time"
+              : "This user already has an ongoing task",
+          );
           return;
         }
       }
 
+ 
       if (updates.status === "on-hold") {
-        const userInput = window.prompt("Why do you want to put this task on hold?", task.on_hold_reason || "");
-        if (userInput === null) return; // cancel update
-        updates.on_hold_reason = userInput;
+        const reason = window.prompt(
+          "Why do you want to put this task on hold?",
+          task.on_hold_reason || "",
+        );
+
+        if (!reason || reason.trim() === "") return;
+
+        updates.on_hold_reason = reason;
       }
 
-      // if (isAdmin) {
-      //   await adminUpdateTask(task.user_id, task.task_id, updates);
-      // }
-      // else if (isCoordinator) {
-      //   await adminUpdateTask(task.user_id, task.task_id, updates);
-      // } 
-      // else {
-        if (updates.status) {
-          await updateTaskStatus(task.task_id, updates.status as "pending" | "ongoing" | "complete" | "on-hold", updates.on_hold_reason);
-        } else {
-          console.warn("Non-admin users can only update task status.");
+      
+      if (
+        isCoordinator &&
+        updates.status === "complete" &&
+        view !== "assigned_to_me"
+      ) {
+        const comment = window.prompt(
+          "Enter reason for force completing this task:",
+        );
+
+        
+        if (!comment || comment.trim() === "") {
+          setErrorMsg("Comment is required to complete task");
+          return;
         }
-      // }
+
+        updates.verified_by_coordinator = true;
+        updates.coordinator_comment = comment;
+      }
+
+      
+      if (updates.status) {
+        await updateTaskStatus(
+          task.user_id,
+          task.task_id,
+          updates.status as "pending" | "ongoing" | "complete" | "on-hold",
+          updates.on_hold_reason,
+          updates.verified_by_coordinator,
+          updates.coordinator_comment,
+        );
+      } else {
+        console.warn("Non-admin users can only update task status.");
+      }
+
+    
       await getTasks();
-      await fetchUser(); 
+      await fetchUser();
     } catch (error: unknown) {
       const err = error as Error;
       console.error("Failed to update task:", err);
-      
-      // If backend returns a generic error, we can still show our custom message if we detect it's a conflict
-      if (err.message.toLowerCase().includes("failed") && updates.status === "ongoing") {
-         setErrorMsg("You can do one task at a time");
+
+      if (err.message.toLowerCase().includes("ongoing")) {
+        setErrorMsg("You can do one task at a time");
       } else {
-         setErrorMsg(err.message || "Operation failed");
+        setErrorMsg(err.message || "Operation failed");
       }
+
       await getTasks();
     }
   };
@@ -175,7 +228,7 @@ export default function Tasks() {
     setDeletingId(taskId);
     try {
       if (isAdmin || isCoordinator) await adminDeleteTask(targetUserId, taskId);
-      // else await deleteTask(taskId);
+      
       await getTasks();
       await fetchUser();
     } catch (error) {
@@ -189,8 +242,8 @@ export default function Tasks() {
     try {
       if (isAdmin || isCoordinator) {
         await assigntask(data);
-      } 
-      
+      }
+
       // else {
       //   await createTask(data);
       // }
@@ -256,68 +309,73 @@ export default function Tasks() {
       `}</style>
 
       <div className="tasks-root w-full max-w-5xl mx-auto space-y-6">
-        
         {/* High Priority Warning Bar */}
         {highPriorityTasks.length > 0 && (
-  <div className="rounded-2xl overflow-hidden border border-red-200 shadow-md shadow-red-100/50">
-    {/* Top severity strip */}
-    <div className="bg-red-600 px-5 py-1.5 flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-        <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-red-100">
-          Priority Alert · Action Required
-        </span>
-      </div>
-      <span className="text-[10px] font-bold text-red-200 tracking-wider uppercase">
-        HIGH
-      </span>
-    </div>
+          <div className="rounded-2xl overflow-hidden border border-red-200 shadow-md shadow-red-100/50">
+            {/* Top severity strip */}
+            <div className="bg-red-600 px-5 py-1.5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-red-100">
+                  Priority Alert · Action Required
+                </span>
+              </div>
+              <span className="text-[10px] font-bold text-red-200 tracking-wider uppercase">
+                HIGH
+              </span>
+            </div>
 
-    {/* Main body */}
-    <div className="bg-red-50 px-5 py-4 flex items-start justify-between gap-4">
-      <div className="flex items-start gap-4">
-        <div className="mt-0.5 flex-shrink-0 w-9 h-9 rounded-xl bg-red-100 border border-red-200 flex items-center justify-center">
-          <AlertCircle className="h-5 w-5 text-red-600" />
-        </div>
-        <div>
-          <p className="text-sm font-bold text-red-900 leading-snug">
-            {highPriorityTasks.length} High Priority Task{highPriorityTasks.length > 1 ? "s" : ""} Require{highPriorityTasks.length === 1 ? "s" : ""} Attention
-          </p>
-          <p className="text-xs text-red-600 mt-1 leading-relaxed font-medium">
-            {highPriorityTasks.map(t => t.title).join(" · ")}
-          </p>
-        </div>
-      </div>
-      <div className="flex-shrink-0 mt-0.5">
-        <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-600 text-white text-sm font-extrabold shadow-sm">
-          {highPriorityTasks.length}
-        </span>
-      </div>
-    </div>
+            {/* Main body */}
+            <div className="bg-red-50 px-5 py-4 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="mt-0.5 flex-shrink-0 w-9 h-9 rounded-xl bg-red-100 border border-red-200 flex items-center justify-center">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-red-900 leading-snug">
+                    {highPriorityTasks.length} High Priority Task
+                    {highPriorityTasks.length > 1 ? "s" : ""} Require
+                    {highPriorityTasks.length === 1 ? "s" : ""} Attention
+                  </p>
+                  <p className="text-xs text-red-600 mt-1 leading-relaxed font-medium">
+                    {highPriorityTasks.map((t) => t.title).join(" · ")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex-shrink-0 mt-0.5">
+                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-600 text-white text-sm font-extrabold shadow-sm">
+                  {highPriorityTasks.length}
+                </span>
+              </div>
+            </div>
 
-    {/* Bottom task pills row */}
-    <div className="bg-white border-t border-red-100 px-5 py-2.5 flex flex-wrap gap-2">
-      {highPriorityTasks.map(t => (
-        <span
-          key={t.task_id}
-          className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md border ${
-            t.status === "complete"
-              ? "bg-green-50 text-green-700 border-green-200"
-              : "bg-red-50 text-red-700 border-red-200"
-          }`}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-            t.status === "complete" ? "bg-green-500" : "bg-red-500"
-          }`} />
-          {t.title}
-          {t.status === "complete" && (
-            <span className="text-[9px] uppercase tracking-wider text-green-600 font-bold ml-0.5">✓ Done</span>
-          )}
-        </span>
-      ))}
-    </div>
-  </div>
-)}
+            {/* Bottom task pills row */}
+            <div className="bg-white border-t border-red-100 px-5 py-2.5 flex flex-wrap gap-2">
+              {highPriorityTasks.map((t) => (
+                <span
+                  key={t.task_id}
+                  className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-md border ${
+                    t.status === "complete"
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : "bg-red-50 text-red-700 border-red-200"
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                      t.status === "complete" ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  />
+                  {t.title}
+                  {t.status === "complete" && (
+                    <span className="text-[9px] uppercase tracking-wider text-green-600 font-bold ml-0.5">
+                      ✓ Done
+                    </span>
+                  )}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         <Stats stats={calculatedStats} />
 
@@ -345,10 +403,18 @@ export default function Tasks() {
               </div>
               <div>
                 <h3 className="text-base font-bold text-gray-900 leading-tight">
-                  {isAdmin ? "All Tasks" : (isCoordinator ? (view === "assigned_by_me" ? "Tasks You Created" : "Tasks Assigned To You") : "Your Tasks")}
+                  {isAdmin
+                    ? "All Tasks"
+                    : isCoordinator
+                      ? view === "assigned_by_me"
+                        ? "Tasks You Created"
+                        : "Tasks Assigned To You"
+                      : "Your Tasks"}
                 </h3>
                 <p className="text-[11px] text-gray-400 font-medium mt-0.5">
-                  {displayTasks.length} task{displayTasks.length !== 1 ? "s" : ""} {view === "all" ? "total" : "in this view"}
+                  {displayTasks.length} task
+                  {displayTasks.length !== 1 ? "s" : ""}{" "}
+                  {view === "all" ? "total" : "in this view"}
                 </p>
               </div>
             </div>
@@ -366,24 +432,24 @@ export default function Tasks() {
           {/* Coordinator Switcher */}
           {isCoordinator && (
             <div className="px-6 py-2 border-b border-gray-100 bg-gray-50 flex gap-2">
-               <button 
-                 onClick={() => setView("all")}
-                 className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${view === "all" ? "bg-indigo-600 text-white" : "bg-white text-gray-500 border border-gray-200"}`}
-               >
-                 All
-               </button>
-               <button 
-                 onClick={() => setView("assigned_by_me")}
-                 className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${view === "assigned_by_me" ? "bg-indigo-600 text-white" : "bg-white text-gray-500 border border-gray-200"}`}
-               >
-                 Your Tasks
-               </button>
-               <button 
-                 onClick={() => setView("assigned_to_me")}
-                 className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${view === "assigned_to_me" ? "bg-indigo-600 text-white" : "bg-white text-gray-500 border border-gray-200"}`}
-               >
-                 Assigned Tasks
-               </button>
+              <button
+                onClick={() => setView("all")}
+                className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${view === "all" ? "bg-indigo-600 text-white" : "bg-white text-gray-500 border border-gray-200"}`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setView("assigned_by_me")}
+                className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${view === "assigned_by_me" ? "bg-indigo-600 text-white" : "bg-white text-gray-500 border border-gray-200"}`}
+              >
+                Your Tasks
+              </button>
+              <button
+                onClick={() => setView("assigned_to_me")}
+                className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${view === "assigned_to_me" ? "bg-indigo-600 text-white" : "bg-white text-gray-500 border border-gray-200"}`}
+              >
+                Assigned Tasks
+              </button>
             </div>
           )}
 
@@ -409,8 +475,17 @@ export default function Tasks() {
                 const isAssignedByMe = task.assigned_by_id === currentUserId;
                 const isAssignedToMe = task.user_id === currentUserId;
 
-                const canDelete = isAdmin || (isCoordinator && isAssignedByMe && !isAssignedToMe);
-                const canUpdateStatus = ((!isAdmin && !isCoordinator) || (isCoordinator && isAssignedToMe)) && task.status !== "complete";
+                const canDelete =
+                  isAdmin ||
+                  (isCoordinator && isAssignedByMe && !isAssignedToMe);
+                const canUpdateStatus =
+                  !task.verified_by_coordinator &&
+                  ((isNormalUser && task.status !== "complete") ||
+                    // Coordinator rules
+                    (isCoordinator &&
+                      task.status !== "complete" &&
+                      (isAssignedToMe || // his own task
+                        isAssignedByMe))); // tasks he assigned
                 return (
                   <div
                     key={task.task_id}
@@ -457,16 +532,18 @@ export default function Tasks() {
                             <User className="h-3.5 w-3.5 opacity-70 flex-shrink-0" />
                           )}
                           <span className="text-violet-500">
-                            {isAdmin || (isCoordinator && isAssignedByMe) ? "To:" : "By:"}
+                            {isAdmin || (isCoordinator && isAssignedByMe)
+                              ? "To:"
+                              : "By:"}
                           </span>
                           <div className="flex flex-col leading-tight">
                             <span className="font-semibold text-violet-800">
-                              {(isAdmin || (isCoordinator && isAssignedByMe))
+                              {isAdmin || (isCoordinator && isAssignedByMe)
                                 ? task.assigned_to_name
                                 : task.assigned_by}
                             </span>
                             <span className="text-[10px] text-violet-400 font-mono">
-                              {(isAdmin || (isCoordinator && isAssignedByMe))
+                              {isAdmin || (isCoordinator && isAssignedByMe)
                                 ? task.assigned_to_email
                                 : task.assigned_by_email}
                             </span>
@@ -507,12 +584,37 @@ export default function Tasks() {
                                   onChange={(v) =>
                                     handleUpdateTask(task, { status: v })
                                   }
-                                  options={[
-                                    { value: "pending", label: "Pending" },
-                                    { value: "ongoing", label: "Ongoing" },
-                                    { value: "complete", label: "Complete" },
-                                    { value: "on-hold", label: "On-hold" },
-                                  ]}
+                                  options={
+                                    isCoordinator && !isAssignedToMe
+                                      ? [
+                                          {
+                                            value: task.status,
+                                            label: task.status,
+                                          },
+                                          {
+                                            value: "complete",
+                                            label: "Complete",
+                                          },
+                                        ]
+                                      : [
+                                          {
+                                            value: "pending",
+                                            label: "Pending",
+                                          },
+                                          {
+                                            value: "ongoing",
+                                            label: "Ongoing",
+                                          },
+                                          {
+                                            value: "complete",
+                                            label: "Complete",
+                                          },
+                                          {
+                                            value: "on-hold",
+                                            label: "On-hold",
+                                          },
+                                        ]
+                                  }
                                   colorMap={statusColorMap}
                                 />
                               ) : (
@@ -533,12 +635,25 @@ export default function Tasks() {
                                 </span>
                               )}
                             </div>
-                            {task.status === "on-hold" && task.on_hold_reason && (
-                              <div className="p-2 bg-amber-50 border border-amber-100 rounded-lg text-[10px] text-amber-800 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
-                                <span className="font-bold uppercase mr-1">Reason:</span>
-                                {task.on_hold_reason}
-                              </div>
-                            )}
+                            {task.status === "on-hold" &&
+                              task.on_hold_reason && (
+                                <div className="p-2 bg-amber-50 border border-amber-100 rounded-lg text-[10px] text-amber-800 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+                                  <span className="font-bold uppercase mr-1">
+                                    Reason:
+                                  </span>
+                                  {task.on_hold_reason}
+                                </div>
+                              )}
+
+                            {task.verified_by_coordinator &&
+                              task.coordinator_comment && (
+                                <div className="p-2 bg-emerald-50 border border-emerald-100 rounded-lg text-[10px] text-emerald-800 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+                                  <span className="font-bold uppercase mr-1">
+                                    Force Completed (Coordinator):
+                                  </span>
+                                  {task.coordinator_comment}
+                                </div>
+                              )}
                           </div>
 
                           <div className="w-px h-5 bg-gray-200 hidden sm:block" />

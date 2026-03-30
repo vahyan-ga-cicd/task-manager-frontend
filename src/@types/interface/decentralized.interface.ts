@@ -16,4 +16,7 @@ export interface ITaskResponse {
   assigned_to_email?: string;
   assigned_to_name?: string;
   on_hold_reason?: string;
+  assigned_to_role?: string;
+  verified_by_coordinator?: boolean;
+  coordinator_comment?: string;
 }

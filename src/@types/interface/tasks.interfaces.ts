@@ -25,4 +25,6 @@ export interface ITask {
   created_at: string;
   on_hold_reason?: string;
   completed_at?: string;
+  verified_by_coordinator?: boolean;
+  coordinator_comment?: string;
 }

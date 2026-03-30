@@ -33,7 +33,7 @@ export const createTask = async (body: ICreateTask) => {
 
 export const fetchTasks = async () => {
   try {
-      const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
     const res = await axios.get(
       "/api/tasks/showtasks",
@@ -51,24 +51,28 @@ export const fetchTasks = async () => {
   }
 };
 
-export const updateTaskStatus = async (task_id: string, status: "pending" | "ongoing" | "complete" | "on-hold", on_hold_reason?: string) => {
-  try {
-    const token = localStorage.getItem("token");
-    const res = await axios.put(
-      `/api/tasks/updatetask/${task_id}`,
-      { status, on_hold_reason },
-      getAuthHeaders(token as string),
-    );
+export const updateTaskStatus = async (
+  user_id: string,
+  task_id: string,
+  status: "pending" | "ongoing" | "complete" | "on-hold",
+  on_hold_reason?: string,
+  is_verified?: boolean,
+  comment?: string
+) => {
+  const token = localStorage.getItem("token");
 
-    return res.data;
-  } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      console.log(error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || "Update task failed");
-    }
+  const res = await axios.put(
+    `/api/tasks/updatetask/${task_id}?target_user_id=${user_id}`, // ✅ IMPORTANT
+    {
+      status,
+      on_hold_reason,
+      is_verified,
+      comment_by_coordinator: comment // ✅ IMPORTANT
+    },
+    getAuthHeaders(token as string)
+  );
 
-    throw new Error("Unexpected error occurred");
-  }
+  return res.data;
 };
 
 // export const deleteTask = async (task_id: string) => {
@@ -90,11 +94,13 @@ export const updateTaskStatus = async (task_id: string, status: "pending" | "ong
 //   }
 // };
 
-
 export const fetchTaskStats = async () => {
   try {
     const token = localStorage.getItem("token");
-    const res = await axios.get("/api/tasks/stats", getAuthHeaders(token as string));
+    const res = await axios.get(
+      "/api/tasks/stats",
+      getAuthHeaders(token as string),
+    );
     return res.data;
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
@@ -105,13 +111,12 @@ export const fetchTaskStats = async () => {
   }
 };
 
-
 export const adminDeleteTask = async (targetUserId: string, taskId: string) => {
   try {
     const token = localStorage.getItem("token");
     const res = await axios.delete(
       `/api/admin/deletetask/${targetUserId}/${taskId}`,
-      getAuthHeaders(token || "")
+      getAuthHeaders(token || ""),
     );
     return res.data;
   } catch (error: unknown) {
