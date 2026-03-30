@@ -342,7 +342,7 @@ export default function Tasks() {
                   onClick={() => setView(v)}
                   className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${view === v ? "bg-indigo-600 text-white" : "bg-white text-gray-500 border border-gray-200"}`}
                 >
-                  {v === "assigned_by_me" ? "Created" : v === "assigned_to_me" ? "Assigned" : "All"}
+                  {v === "assigned_by_me" ? "Your Tasks" : v === "assigned_to_me" ? "Assigned Tasks" : "All Tasks"}
                 </button>
               ))}
             </div>
