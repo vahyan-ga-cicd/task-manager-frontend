@@ -328,9 +328,11 @@ export default function TaskDashboard() {
         setlastKey(res.lastKey || null);
         setCurrentPage(newPage);
 
-        if (newPage > lastKeyHistory.length) {
-          setLastKeyHistory((prev) => [...prev, res.lastKey || null]);
-        }
+        setLastKeyHistory((prev) => {
+          const updated = [...prev];
+          updated[newPage - 1] = targetKey;
+          return updated;
+        });
       } catch (e) {
         console.error(e);
       } finally {
@@ -352,20 +354,22 @@ export default function TaskDashboard() {
       }
     })();
     fetchTasks(null, 1);
-  }, [fetchTasks]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleNext = () => {
-    if (lastKey) {
-      fetchTasks(lastKey, currentPage + 1);
-    }
+    if (!lastKey) return;
+
+    fetchTasks(lastKey, currentPage + 1);
   };
 
-  const handlePrev = () => {
-    if (currentPage > 1) {
-      const prevKey = lastKeyHistory[currentPage - 2];
-      fetchTasks(prevKey, currentPage - 1);
-    }
-  };
+const handlePrev = () => {
+  if (currentPage === 1) return;
+
+  const prevKey = lastKeyHistory[currentPage - 2] || null;
+
+  fetchTasks(prevKey, currentPage - 1);
+};
 
   const departments = useMemo(() => {
     const depts = new Set<string>(["IT", "Accounts", "Traffic"]);
@@ -1175,19 +1179,32 @@ export default function TaskDashboard() {
                               {task.verified_by_coordinator ? (
                                 <div className="space-y-1">
                                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[9px] font-bold uppercase tracking-wider border border-emerald-100">
-                                    <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    <svg
+                                      className="w-2.5 h-2.5"
+                                      fill="currentColor"
+                                      viewBox="0 0 20 20"
+                                    >
+                                      <path
+                                        fillRule="evenodd"
+                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                        clipRule="evenodd"
+                                      />
                                     </svg>
                                     Verified By Coordinator
                                   </span>
                                   {task.coordinator_comment && (
-                                    <p className="text-[9px] text-gray-400 italic line-clamp-1 max-w-[150px]" title={task.coordinator_comment}>
+                                    <p
+                                      className="text-[9px] text-gray-400 italic line-clamp-1 max-w-[150px]"
+                                      title={task.coordinator_comment}
+                                    >
                                       &quot;{task.coordinator_comment}&quot;
                                     </p>
                                   )}
                                 </div>
                               ) : (
-                                <span className="text-[10px] text-gray-300">—</span>
+                                <span className="text-[10px] text-gray-300">
+                                  —
+                                </span>
                               )}
                             </td>
                             <td className="px-6 py-4 text-[11px] text-gray-500 font-medium whitespace-nowrap">
@@ -1206,7 +1223,6 @@ export default function TaskDashboard() {
                 </table>
               </div>
 
-             
               {/* Pagination Controls */}
               <div className="px-6 py-4 border-t border-gray-100 bg-white flex items-center justify-between flex-wrap gap-3">
                 <p className="text-xs text-gray-400 font-medium">
