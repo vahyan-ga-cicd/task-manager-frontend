@@ -2,12 +2,12 @@ import AdminDashboard from "@/components/dashboard/admin/AdminDashboard";
 import { RequireRole } from "@/hooks/admin";
 import React from "react";
 
-function page() {
+function AuditLogsPage() {
   return (
     <RequireRole roleRequired="admin">
-      <AdminDashboard defaultTab="users" />
+      <AdminDashboard defaultTab="audit-logs" />
     </RequireRole>
   );
 }
 
-export default page;
+export default AuditLogsPage;

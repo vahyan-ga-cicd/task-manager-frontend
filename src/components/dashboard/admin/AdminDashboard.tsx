@@ -6,6 +6,10 @@ import { createuser, updateuser } from "@/utils/api/admin/admin";
 import Sidebar from "./Sidebar";
 import { IUser } from "@/@types/interface/admin.interfaces";
 import { toast } from "sonner";
+import { fetchAdminAuditLogs } from "@/utils/api/auditApi";
+import AuditLogsTable from "../../audit/AuditLogsTable";
+import { useEffect } from "react";
+import { AuditLog } from "@/@types/interface/auditlogs.interface";
   
 /* ── Inline SVG Icons ── */
 const Icons = {
@@ -274,16 +278,43 @@ const ADD_USER_DEFAULTS: IUserAddFormData = {
   department: "IT",
 };
 
-function AdminDashboard() {
+interface AdminDashboardProps {
+  defaultTab?: string;
+}
+
+function AdminDashboard({ defaultTab = "users" }: AdminDashboardProps) {
   const { users, fetchAllUsers } = useAdmin();
 
-  const [activeTab, setActiveTab] = useState("users");
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [editingUser, setEditingUser] = useState<IUser | null>(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [revealedPasswords, setRevealedPasswords] = useState<Set<string>>(
     new Set(),
   );
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  useEffect(() => {
+    if (activeTab === "audit-logs") {
+      const getLogs = async () => {
+        setLogsLoading(true);
+        try {
+          const res = await fetchAdminAuditLogs();
+          setLogs(res.data);
+        } catch (error) {
+          console.error(error);
+          toast.error("Failed to fetch audit logs");
+        } finally {
+          setLogsLoading(false);
+        }
+      };
+      getLogs();
+    }
+  }, [activeTab, refreshTrigger]);
+
+  const handleRefreshLogs = () => setRefreshTrigger((prev) => prev + 1);
 
   const [formData, setFormData] = useState<IUserEditFormData>({
     username: "",
@@ -339,7 +370,11 @@ function AdminDashboard() {
   const toggleReveal = (userId: string) => {
     setRevealedPasswords((prev) => {
       const next = new Set(prev);
-      next.has(userId) ? next.delete(userId) : next.add(userId);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
       return next;
     });
   };
@@ -485,7 +520,23 @@ function AdminDashboard() {
 
       <main className="md:ml-[240px] pb-24 md:pb-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-          {/* Page Header */}
+          {activeTab === "audit-logs" ? (
+            <div>
+              <div className="mb-7 flex items-start justify-between flex-wrap gap-3">
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Task Audit Logs</h1>
+                  <p className="text-sm text-gray-500">History of task assignments and status updates across the entire system.</p>
+                </div>
+              </div>
+              <AuditLogsTable
+                logs={logs}
+                loading={logsLoading}
+                onRefresh={handleRefreshLogs}
+              />
+            </div>
+          ) : (
+            <>
+              {/* Page Header */}
           <div className="mb-7 flex items-start justify-between flex-wrap gap-3">
             <div>
               <div
@@ -1277,6 +1328,8 @@ function AdminDashboard() {
               </div>
             )}
           </div>
+          </>
+          )}
         </div>
       </main>
 

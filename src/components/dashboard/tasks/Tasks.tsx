@@ -283,7 +283,7 @@ export default function Tasks() {
         .priority-left-bar-Low { border-left: 3px solid #cbd5e1; }
       `}</style>
 
-      <div className="tasks-root w-full max-w-5xl mx-auto space-y-6">
+      <div className="tasks-root w-full space-y-6">
         {highPriorityTasks.length > 0 && (
           <div className="rounded-2xl overflow-hidden border border-red-200 shadow-md">
             <div className="bg-red-600 px-5 py-1.5 flex items-center justify-between">
@@ -313,7 +313,7 @@ export default function Tasks() {
         )}
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-slate-50/50">
+          <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-50/50">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center">
                 <ListChecks className="h-5 w-5 text-indigo-600" />
@@ -335,14 +335,14 @@ export default function Tasks() {
           </div>
 
           {isCoordinator && (
-            <div className="px-6 py-2 border-b border-gray-100 bg-gray-50 flex gap-2">
+            <div className="px-6 py-3 border-b border-gray-100 bg-gray-50 flex flex-wrap gap-2">
               {(["all", "assigned_by_me", "assigned_to_me"] as const).map((v) => (
                 <button
                   key={v}
                   onClick={() => setView(v)}
                   className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${view === v ? "bg-indigo-600 text-white" : "bg-white text-gray-500 border border-gray-200"}`}
                 >
-                  {v === "assigned_by_me" ? "Your Tasks" : v === "assigned_to_me" ? "Assigned Tasks" : "All Tasks"}
+                  {v === "assigned_by_me" ? "Tasks Created By Me" : v === "assigned_to_me" ? "Tasks Assigned To Me" : "All Tasks"}
                 </button>
               ))}
             </div>
@@ -394,10 +394,10 @@ export default function Tasks() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-4 mt-4 pt-3 border-t border-gray-50">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-4 pt-3 border-t border-gray-50">
                       <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase">Status</span>
+                        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase shrink-0">Status</span>
                           {canUpdateStatus ? (
                             isCoordinator && !isAssignedToMe ? (
                               <div className="flex items-center gap-3">
@@ -433,7 +433,14 @@ export default function Tasks() {
                           )}
                         </div>
                       </div>
-                      <span className="text-[10px] text-gray-400 font-mono">Created: {new Date(task.created_at).toLocaleDateString()}</span>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        {task.status === "complete" && task.completed_at && (
+                          <span className="text-[10px] text-indigo-500 font-bold font-mono bg-indigo-50 px-2 py-0.5 rounded">
+                            Done: {new Date(task.completed_at).toLocaleString()}
+                          </span>
+                        )}
+                        <span className="text-[9px] text-gray-400 font-mono pr-1">Created: {new Date(task.created_at).toLocaleDateString()}</span>
+                      </div>
                     </div>
 
                     {(task.status === "on-hold" && task.on_hold_reason) && (

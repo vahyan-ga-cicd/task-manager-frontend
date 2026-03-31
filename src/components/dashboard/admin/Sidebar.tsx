@@ -22,6 +22,7 @@ const navItems: NavItem[] = [
   {
     id: "users",
     label: "Users",
+    route: "/admin-dashboard/users",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <circle
@@ -61,6 +62,29 @@ const navItems: NavItem[] = [
           stroke="currentColor"
           strokeWidth="1.2"
           strokeLinecap="round"
+        />
+      </svg>
+    ),
+  },
+  {
+    id: "audit-logs",
+    label: "Audit Logs",
+    route: "/admin-dashboard/audit-logs",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path
+          d="M8 3.5v4.5l2.5 2.5"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle
+          cx="8"
+          cy="8"
+          r="6.5"
+          stroke="currentColor"
+          strokeWidth="1.4"
         />
       </svg>
     ),
